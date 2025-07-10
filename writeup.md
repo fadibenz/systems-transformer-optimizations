@@ -24,7 +24,7 @@ The model sizes are as follows:
 **Table 1: Specifications of different model sizes**
 
 
-### End-toEnd Transformer Model Benchmarking:
+### End-to-End Benchmarking:
 
 We benchmarked the forward and backward passes for the transformer models described in the table below. 
 
@@ -66,7 +66,7 @@ the 2.7B was too big for my Tesla P100 (Kaggle free GPU).
 
 ---
 
-### Effect of Omitting Warmup Steps
+#### Effect of Omitting Warmup Steps
 
 We repeated the benchmark **without war mup steps**, 
 and observed significantly higher runtimes and greater variance.
@@ -81,3 +81,36 @@ Even when using only **1 or 2 warmup steps**, the timings were still inconsisten
 Reliable benchmarking requires enough warmup iterations 
 to let the system reach a deterministic and cache-optimized execution state.
 
+
+#### Mixed-precision training:
+In mixed-precision training, we might use either FP32 or BF16 (Nobody seriously uses FP16).
+
+The use of BF16 leads to less memory use (obvious) and to faster training (less obvious) 
+because it leads to higher memory throughput, better cache utilization and register efficiency (among other more technical reasons).
+
+My heuristical understanding on where to use FP32/BF16 is the following:
+
++ Weights should always be stored in FP32.  
+  - In mixed‑precision training (e.g., NVIDIA AMP), a master copy of the weights lives in FP32.  
+  - FP16/BF16 “shadows” are used in matmuls, but updates are applied to the FP32 master to avoid drift.
+
++ Mixed‑precision is used in both forward and backward passes, but noisy gradients don’t accumulate unchecked.  
+  - Forward *and* backward matrix‑multiply kernels run in FP16/BF16.  
+  - Gradients are immediately up‑cast (and loss‐scaled if using FP16) to FP32 before the weight update.
+
++ Noisy activations (from low precision) act like a tiny regularizer, but the main goal is speed and memory savings.  
+  - Quantization noise is structured by mantissa rounding, not pure Gaussian.  
+  - We benefit from it only because matmul errors average out over many terms.
+
++ We only tolerate noise where it can be averaged out by gradient sums.  
+  - Independent errors in multi‑term reductions (e.g. dot‑products) cancel out.  
+  - Single‑term or few‑term ops (norms, losses) can’t average out error and must stay in FP32.
+
++ In simpler terms:  
+  + We can use BF16 in matrix multiplications because each output is a sum over many products, rounding errors average out.  
+  + But for normalization or loss calculations, a single rounding error would bias the entire result, use FP32.
+
++ Systematic gradient corruption (single‑point failure) vs. random gradient noise (independent ops)  
+  - This difference is what determines precision requirements for training stability.
+
+### Nsight Systems Profiler:
