@@ -119,4 +119,4 @@ if __name__ == "__main__":
     )
 
     print("\n ----Finished benchmarking----")
-    print(f"\n it took {mean_time}s to run {"forward and backward pass" if args.full_run else "forward pass"} on model of size {args.model} with standard deviation {std_time}s")
+    print(f"\n it took {mean_time}s to run {'forward and backward pass' if args.full_run else 'forward pass'} on model of size {args.model} with standard deviation {std_time}s")
