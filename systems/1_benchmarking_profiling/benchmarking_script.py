@@ -5,13 +5,14 @@ import torch.nn as nn
 from transformer_implementation.model import BasicsTransformerLM
 from systems.utils import load_config, set_seed_everything
 import timeit
+import numpy as np
 
 
 def benchmark_operation(model:nn.Module,
                         data: torch.Tensor,
                         num_iterations:int,
                         warmup_iterations: int,
-                        full_run: bool) -> int:
+                        full_run: bool) -> [float, float]:
 
     """
     A function that benchmarks model run based on following params:
@@ -28,7 +29,7 @@ def benchmark_operation(model:nn.Module,
     if torch.cuda.is_available():
         torch.cuda.synchronize()
 
-    averaged_time = 0
+    time_list: list[float] = []
 
     for _ in range(num_iterations):
         start_time = timeit.default_timer()
@@ -43,9 +44,11 @@ def benchmark_operation(model:nn.Module,
             torch.cuda.synchronize()
 
         run_time = timeit.default_timer() - start_time
-        averaged_time +=  run_time / num_iterations
+        time_list.append(run_time)
+    mean_time = np.mean(time_list)
+    std_time = np.std(time_list)
 
-    return averaged_time
+    return mean_time, std_time
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -99,13 +102,15 @@ if __name__ == "__main__":
                                       (batch_size, args.context_length))
 
     if torch.cuda.is_available():
-        random_input_data.pin_memory().to(device, non_blocking=True)
+        random_input_data = random_input_data.pin_memory().to(device, non_blocking=True)
     else:
-        random_input_data.to(device)
+        random_input_data = random_input_data.to(device)
 
     print("\n ----Started benchmarking----")
 
-    mean_time = benchmark_operation(
+    print(f"Running on device: {device} ({torch.cuda.get_device_name(0) if device == 'cuda' else 'CPU'})")
+
+    mean_time, std_time = benchmark_operation(
         model=model,
         data=random_input_data,
         num_iterations=args.iters,
@@ -114,4 +119,4 @@ if __name__ == "__main__":
     )
 
     print("\n ----Finished benchmarking----")
-    print(f"\n it took {mean_time}s to run {"forward and backward pass" if args.full_run else "forward pass"} on model of size {args.model}")
+    print(f"\n it took {mean_time}s to run {"forward and backward pass" if args.full_run else "forward pass"} on model of size {args.model} with standard deviation {std_time}s")
