@@ -44,7 +44,6 @@ the 2.7B was too big for my Tesla P100 (Kaggle free GPU).
 | XL         | 0.178        | 0.001       |
 | 2.7B       | OOM          | OOM         |
 
-
 #### Backward Pass Timings
 
 | Model Size | Avg Time (s) | Std Dev (s) |

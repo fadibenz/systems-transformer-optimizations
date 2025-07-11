@@ -28,7 +28,8 @@ def benchmark_operation(model:nn.Module,
         print("Must run this code with GPU")
         sys.exit(1)
 
-    context_manager = torch.autocast(device_type="cuda", dtype=torch.bfloat16) if mixed_precision else nullcontext()
+
+    context_manager = torch.autocast(device_type="cuda", dtype=torch.float16) if mixed_precision else nullcontext()
 
     for _ in range(warmup_iterations):
         with context_manager:
