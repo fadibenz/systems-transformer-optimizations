@@ -3,13 +3,14 @@ import argparse
 import torch
 import torch.nn as nn
 from transformer_implementation.model import BasicsTransformerLM
+from transformer_implementation.optimizer import AdamW
 from systems.utils import load_config, set_seed_everything
 import timeit
 import numpy as np
 import sys
 from contextlib import nullcontext
 import torch.cuda.nvtx as nvtx
-import torch.optim as optim
+
 from torch.amp.grad_scaler import GradScaler
 
 def benchmark_operation(model:nn.Module,
