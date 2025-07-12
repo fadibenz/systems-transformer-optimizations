@@ -10,6 +10,7 @@ import sys
 from contextlib import nullcontext
 import torch.cuda.nvtx as nvtx
 import torch.optim as optim
+from torch.amp.grad_scaler import GradScaler
 
 def benchmark_operation(model:nn.Module,
                         data: torch.Tensor,
@@ -32,6 +33,7 @@ def benchmark_operation(model:nn.Module,
 
     if full_run:
         optimizer = optim.AdamW(model.parameters())
+        scaler = GradScaler() if mixed_precision else None
 
     context_manager = torch.autocast(device_type="cuda", dtype=torch.float16) if mixed_precision else nullcontext()
 
@@ -42,7 +44,7 @@ def benchmark_operation(model:nn.Module,
                 loss = output.mean()
 
         if full_run:
-            optimizer.zero_grad(set_to_none=None)
+            optimizer.zero_grad(set_to_none=True)
             loss.backward()
             optimizer.step()
 
@@ -68,13 +70,26 @@ def benchmark_operation(model:nn.Module,
             optimizer.zero_grad(set_to_none=True)
             nvtx.range_pop()
 
-            nvtx.range_push("backward_pass")
-            loss.backward()
-            nvtx.range_pop()
+            if mixed_precision and scaler is not None:
+                nvtx.range_push("backward_pass")
+                scaler.scale(loss).backward()
+                nvtx.range_pop()
 
-            nvtx.range_push("optimizer_step")
-            optimizer.step()
-            nvtx.range_pop()
+                nvtx.range_push("optimizer_step")
+                scaler.step(optimizer)
+                scaler.update()
+                nvtx.range_pop()
+
+            else:
+
+                nvtx.range_push("backward_pass")
+                loss.backward()
+                nvtx.range_pop()
+
+                nvtx.range_push("optimizer_step")
+                optimizer.step()
+                nvtx.range_pop()
+
 
         torch.cuda.synchronize()
 
