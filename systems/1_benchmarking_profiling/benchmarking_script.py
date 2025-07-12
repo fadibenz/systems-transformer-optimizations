@@ -37,6 +37,7 @@ def benchmark_operation(model:nn.Module,
 
     context_manager = torch.autocast(device_type="cuda", dtype=torch.float16) if mixed_precision else nullcontext()
 
+    nvtx.range_push("warmup phase")
     for _ in range(warmup_iterations):
         with context_manager:
             output = model(data)
@@ -47,12 +48,14 @@ def benchmark_operation(model:nn.Module,
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             optimizer.step()
+    nvtx.range_pop()
 
     torch.cuda.synchronize()
 
     time_list: list[float] = []
 
 
+    nvtx.range_push("benchmark")
     for _ in range(num_iterations):
         nvtx.range_push("iteration")
 
@@ -96,6 +99,7 @@ def benchmark_operation(model:nn.Module,
         run_time = timeit.default_timer() - start_time
         time_list.append(run_time)
         nvtx.range_pop()
+    nvtx.range_pop()
 
     mean_time = np.mean(time_list)
     std_time = np.std(time_list)
