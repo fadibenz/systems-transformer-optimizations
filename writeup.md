@@ -19,7 +19,6 @@ The model sizes are as follows:
 | medium | 1024    | 4096  | 24         | 16        |
 | large  | 1280    | 5120  | 36         | 20        |
 | xl     | 1600    | 6400  | 48         | 25        |
-| 2.7B   | 2560    | 10240 | 32         | 32        |
 
 **Table 1: Specifications of different model sizes**
 
@@ -29,7 +28,7 @@ The model sizes are as follows:
 We benchmarked the forward and backward passes for the transformer models described in the table below. 
 
 
-Each run used **5 warmup iterations** followed by **10 timed iterations**,
+Each run used **10 warmup iterations** followed by **10 timed iterations**,
 and we report both the **mean** and **standard deviation** of the runtimes.
 I used a context length of 128, and I could fit up to XL model;
 the 2.7B was too big for my Tesla P100 (Kaggle free GPU).
@@ -40,9 +39,8 @@ the 2.7B was too big for my Tesla P100 (Kaggle free GPU).
 |------------|--------------|-------------|
 | Small      | 0.035        | 0.005       |
 | Medium     | 0.070        | 0.010       |
-| Large      | 0.103        | 0.010       |
+| Large      | 0.165        | 0.011       |
 | XL         | 0.178        | 0.001       |
-| 2.7B       | OOM          | OOM         |
 
 #### Backward Pass Timings
 
@@ -52,7 +50,6 @@ the 2.7B was too big for my Tesla P100 (Kaggle free GPU).
 | Medium     | 0.190        | 0.056       |
 | Large      | 0.360        | 0.052       |
 | XL         | OOM          | OOM         |
-| 2.7B       | OOM          | OOM         |
 
 
 > **Notes:**
@@ -62,6 +59,7 @@ the 2.7B was too big for my Tesla P100 (Kaggle free GPU).
 > + The backward pass takes around two times the forward pass (Aligns with scaling heuristics)
 > + Runtime variability was minimal, with standard deviations remaining low,
 > suggesting stable system performance once the model reaches a steady state (after warmup).
+> + I couldn't fit the XL model for the full pass (gradients)
 
 ---
 
@@ -111,5 +109,26 @@ My heuristical understanding on where to use FP32/BF16 is the following:
 
 + Systematic gradient corruption (single‑point failure) vs. random gradient noise (independent ops)  
   - This difference is what determines precision requirements for training stability.
+
+For my experimentation with mixed-precision training, I switched to T4 GPU since P100 doesn't have 
+specialized Tensor Cores for BF16/FP16.
+
+Unfortunately, T4 doesn’t support BF16, so I used FP16 instead, I didn’t include scaling, which would be used in proper training scenarios, 
+to keep focus on pure computing benchmarking.
+
+These are the results of the full training pass, with the same parameters as before (Both recorded on T4)
+
+| Model Size | Avg Time FP | Avg Time with MP |
+|------------|-------------|------------------|
+| Small      | 0.121       | 0.106            |
+| Medium     | 0.243       | 0.192            |
+| Large      | 0.517       | 0.388            |
+
+> **Notes:**
+> + As expected, mixed-precision training leads to better performance; although even 
+> with mixed-precision, it's still suboptimal compared to P100 with Full precision.
+> This might be because certain operations still execute in FP32 (Where P100 has higher peak throughput).
+> + Another caveat is that mixed-precision used more memory, probably because we still store a master copy of the weights.
+> + The difference in performance becomes bigger as model size gets bigger (better hardware utilization)
 
 ### Nsight Systems Profiler:

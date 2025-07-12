@@ -8,6 +8,8 @@ import timeit
 import numpy as np
 import sys
 from contextlib import nullcontext
+import torch.cuda.nvtx as nvtx
+import torch.optim as optim
 
 def benchmark_operation(model:nn.Module,
                         data: torch.Tensor,
@@ -28,12 +30,21 @@ def benchmark_operation(model:nn.Module,
         print("Must run this code with GPU")
         sys.exit(1)
 
+    if full_run:
+        optimizer = optim.AdamW(model.parameters())
 
     context_manager = torch.autocast(device_type="cuda", dtype=torch.float16) if mixed_precision else nullcontext()
 
     for _ in range(warmup_iterations):
         with context_manager:
-            model(data)
+            output = model(data)
+            if full_run:
+                loss = output.mean()
+
+        if full_run:
+            optimizer.zero_grad(set_to_none=None)
+            loss.backward()
+            optimizer.step()
 
     torch.cuda.synchronize()
 
@@ -41,19 +52,35 @@ def benchmark_operation(model:nn.Module,
 
 
     for _ in range(num_iterations):
+        nvtx.range_push("iteration")
+
         start_time = timeit.default_timer()
 
+        nvtx.range_push("forward_pass")
         with context_manager:
             output = model(data)
-            loss = output.mean()
+            if full_run:
+                loss = output.mean()
+        nvtx.range_pop()
 
         if full_run:
+            nvtx.range_push("optimizer_zero_grad")
+            optimizer.zero_grad(set_to_none=True)
+            nvtx.range_pop()
+
+            nvtx.range_push("backward_pass")
             loss.backward()
+            nvtx.range_pop()
+
+            nvtx.range_push("optimizer_step")
+            optimizer.step()
+            nvtx.range_pop()
 
         torch.cuda.synchronize()
 
         run_time = timeit.default_timer() - start_time
         time_list.append(run_time)
+        nvtx.range_pop()
 
     mean_time = np.mean(time_list)
     std_time = np.std(time_list)
@@ -107,6 +134,7 @@ if __name__ == "__main__":
         vocab_size=vocab_size,
         rope_theta= config["rope_theta"]
     )
+
     model.to(device)
 
     random_input_data = torch.randint(0, vocab_size,
