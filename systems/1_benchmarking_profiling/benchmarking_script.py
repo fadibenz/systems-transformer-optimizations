@@ -33,7 +33,7 @@ def benchmark_operation(model:nn.Module,
         sys.exit(1)
 
     if full_run:
-        optimizer = optim.AdamW(model.parameters())
+        optimizer = AdamW(model.parameters())
         scaler = GradScaler() if mixed_precision else None
 
     context_manager = torch.autocast(device_type="cuda", dtype=torch.float16) if mixed_precision else nullcontext()
