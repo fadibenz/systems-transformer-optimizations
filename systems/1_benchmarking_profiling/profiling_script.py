@@ -34,6 +34,7 @@ def profile(model:nn.Module,
         scaler = GradScaler() if mixed_precision else None
 
     context_manager = torch.autocast(device_type="cuda", dtype=torch.float16) if mixed_precision else nullcontext()
+    no_grad = torch.no_grad() if not full_run else nullcontext
 
     nvtx.range_push("warmup phase")
     for _ in range(warmup_iterations):
@@ -58,9 +59,10 @@ def profile(model:nn.Module,
 
         nvtx.range_push("forward_pass")
         with context_manager:
-            output = model(data)
-            if full_run:
-                loss = output.mean()
+            with no_grad:
+                output = model(data)
+                if full_run:
+                    loss = output.mean()
         nvtx.range_pop()
 
         if full_run:

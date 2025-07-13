@@ -32,22 +32,21 @@ def profile_memory(model:nn.Module,
         scaler = GradScaler() if mixed_precision else None
 
     context_manager = torch.autocast(device_type="cuda", dtype=torch.float16) if mixed_precision else nullcontext()
-
+    no_grad = torch.no_grad() if not full_run else nullcontext
     for _ in range(warmup_iterations):
         with context_manager:
             model(data)
-
 
     torch.cuda.synchronize()
     torch.cuda.memory._record_memory_history(max_entries=1000000)
 
     for _ in range(num_iterations):
         with context_manager:
-            output = model(data)
+            with no_grad:
+                output = model(data)
             if full_run:
                 loss = output.mean()
 
-        if full_run:
             if mixed_precision and scaler is not None:
                 optimizer.zero_grad()
                 scaler.scale(loss).backward()

@@ -4,6 +4,9 @@ import timeit
 import numpy as np
 import sys
 from contextlib import nullcontext
+
+from torch import no_grad
+
 from utils import get_args, initialize_model_data
 
 from torch.amp.grad_scaler import GradScaler
@@ -32,6 +35,7 @@ def benchmark_operation(model:nn.Module,
 
 
     context_manager = torch.autocast(device_type="cuda", dtype=torch.float16) if mixed_precision else nullcontext()
+    no_grad = torch.no_grad() if not full_run else nullcontext
 
     for _ in range(warmup_iterations):
         with context_manager:
@@ -49,12 +53,11 @@ def benchmark_operation(model:nn.Module,
     for _ in range(num_iterations):
 
         start_time = timeit.default_timer()
-
-
         with context_manager:
-            output = model(data)
-            if full_run:
-                loss = output.mean()
+            with no_grad:
+                output = model(data)
+                if full_run:
+                    loss = output.mean()
 
         if full_run:
             if mixed_precision and scaler is not None:
