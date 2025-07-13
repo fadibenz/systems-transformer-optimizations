@@ -42,7 +42,6 @@ def profile(model:nn.Module,
             output = model(data)
             if full_run:
                 loss = output.mean()
-
         if full_run:
             loss.backward()
     nvtx.range_pop()
@@ -66,22 +65,16 @@ def profile(model:nn.Module,
         nvtx.range_pop()
 
         if full_run:
-            nvtx.range_push("optimizer_zero_grad")
-            nvtx.range_pop()
-
             if mixed_precision and scaler is not None:
                 nvtx.range_push("backward_pass")
                 scaler.scale(loss).backward()
                 nvtx.range_pop()
 
             else:
-
                 nvtx.range_push("backward_pass")
                 loss.backward()
                 nvtx.range_pop()
-
         torch.cuda.synchronize()
-
         run_time = timeit.default_timer() - start_time
         time_list.append(run_time)
         nvtx.range_pop()
