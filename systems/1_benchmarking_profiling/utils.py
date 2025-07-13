@@ -46,7 +46,7 @@ def initialize_model_data(args: Namespace,
     model_config = config[args.model]
 
     if profile:
-        BasicsTransformerLM.scaled_dot_product_attention = annotated_scaled_dot_product_attention
+        transformer_implementation.model.scaled_dot_product_attention = annotated_scaled_dot_product_attention
 
     model = BasicsTransformerLM(
         d_model=model_config["d_model"],

@@ -8,4 +8,10 @@
 - Tested the benchmarking script on CPU using local machine.
 - Pushed work to GitHub to start benchmarking using Kaggle.
 
-#
+# 2025-07-13
+- Finished benchmarking all runs, results and analysis in `writeup.md`.
+- Added profiling with Nsight systems by adding different nvtx ranges.
+- Refactored code and seperated benchmarking / profiling scripts.
+- Analyzed the forward pass and went into the different detail, results in `writeup.md`
+- Added annotated scaled-dot product for a deeper look at the different attention operations.
+- 
