@@ -201,11 +201,11 @@ Details for the forward pass are the same as before. We will focus on the backwa
 
 Results are filtered for one backward pass:
 
-| Name                      | Calls | Avg Time   | Time % | std    | Notes                                |
-|---------------------------|-------|------------|--------|--------|--------------------------------------|
-| `volta_sgemm_128x64_nn`   | 191   | 420.8 µs   | 31.4%  | 276 µs | First matrix multiplications         |
-| `volta_sgemm_128x64_nn`   | 191   | 64.9 µs    | 31.4%  | 278 µs | Second matrix multiplication         |
-| `elementwise_kernel`      | 382   | 271.192 µs | 23.1%  | 20 µs  | Point wise ops (likely activations)  |
+| Name                    | Calls | Avg Time   | Time % | std    | Notes                                           |
+|-------------------------|-------|------------|--------|--------|-------------------------------------------------|
+| `volta_sgemm_128x64_nn` | 191   | 420.8 µs   | 31.4%  | 276 µs | First matrix multiplications  (same dimensions) |
+| `volta_sgemm_128x64_nt` | 191   | 64.9 µs    | 31.4%  | 278 µs | Second matrix multiplication  (diff dimensions) |
+| `elementwise_kernel`    | 382   | 271.192 µs | 23.1%  | 20 µs  | Point wise ops (likely activations)             |
 
 > Notes
 > + Backward pass takes approximately two times as much as the forward pass; we can see clearly that this is because 
@@ -217,3 +217,31 @@ Results are filtered for one backward pass:
 
 
 #### Deep-dive into attention:
+
+If we look at this filtered part, which represents one attention calculation (for one layer), 
+under forward pass we can find `num_layers` attention computations.
+
+![writeup_assets/attention_nsight.png](writeup_assets/attention_nsight.png)
+
+Let's start with an overview analysis, we can notice the following:
++ Each operation takes about half its execution time in the CPU, the actual computations in the GPU are rapid. 
++ We can see clearly how when a CPU launches a kernel it gets executed instantly.
++ We can also notice that it takes a significant time between the GPU finishing a kernel and the CPU launching the next.
++ Calculating the softmax takes the same time as calculating the first matrix (large one)
++ The missing annotation is for the masking part.
+
+
+Now, in more details:
++ Attention calculations take around `1230 µs` (on average).
++ All three operations, first matmul, softmax and final matmul take approximately the same time `330 µs`, although this changes greatly between layers, 
+the rest is for masking operation.
++ Matrix multiplication is achieved with two Kernel calls  `volta_sgemm_` and a `vectorised_elementwise`.
++ In contrast, the softmax operation, **takes five Kernels!**, this is a lot and screams for the need to fuse.
++ The pure calculation in the GPU takes only `500 µs`.
+
+> Main results:
+> + Running one attention head takes 11 kernel launches, 5 of which are for softmax alone.
+The GPU executes in ~500 µs, but due to CPU dispatch latency, the total time rises to ~1230 µs.
+If we could fuse the entire attention computation into a single composite kernel, we could halve the total runtime.
+> + **Softmax is around two times less expensive than Matrix multiplications in terms of FLOPs, but it still takes around the same time!**
+
