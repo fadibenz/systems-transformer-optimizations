@@ -6,8 +6,6 @@ import math
 from transformer_implementation.nn_utils import softmax
 from torch.cuda import nvtx
 
-
-@nvtx.range("scaled dot product attention")
 def annotated_scaled_dot_product_attention(
     Q: Float[Tensor, " ... queries d_k"],
     K: Float[Tensor, " ... keys    d_k"],
