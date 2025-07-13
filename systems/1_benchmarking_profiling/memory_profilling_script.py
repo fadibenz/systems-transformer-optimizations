@@ -38,8 +38,8 @@ def profile_memory(model:nn.Module,
             model(data)
 
     torch.cuda.synchronize()
-    torch.cuda.memory._record_memory_history(max_entries=1000000)
 
+    torch.cuda.memory._record_memory_history(max_entries=1000000)
     for _ in range(num_iterations):
         with context_manager:
             with no_grad:

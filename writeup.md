@@ -246,3 +246,22 @@ If we could fuse the entire attention computation into a single composite kernel
 > + **Softmax is around two times less expensive than Matrix multiplications in terms of FLOPs, but it still takes around the same time!**
 
 ### Memory Profiling:
+
+I ran memory profiling with different context lengths (128, 256, 512) on the medium-sized model, with and without mixed-precision.
+
+First, let's look at this diagram I created; it shows my understanding of memory management.
+
+
++ The initial baseline representing the model size and data is around `2GB`, it stays allocated through the full profiling.
++ In the first forward pass, we see the activation buildup, we go from `2GB` to around `6GB`, meaning activations are quite large.
++ After that, we can see memory quickly delocatting as gradients are calculated and activations are removed.
++ Afterward, we can see the optimizer states getting created; this is what we would expect, and memory goes up to a new baseline of around `6.8GB`.
++ The loop now repeats, activations buildup again, as gradients are calculated memory goes down, and we go down to the optimizer state baseline.
+
+
+A simplified view is that of the forward pass, we can see how memory goes up and down as we calculate activations and then gradients, I didn’t use `no_grad` or we would've had different results.
+
+
+###### Difference between different context lengths:
+
+###### Mixed-precision vs. Full-precision:
