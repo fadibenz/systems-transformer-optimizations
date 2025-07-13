@@ -35,13 +35,8 @@ def profile_memory(model:nn.Module,
 
     for _ in range(warmup_iterations):
         with context_manager:
-            output = model(data)
-            if full_run:
-                loss = output.mean()
-        if full_run:
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            model(data)
+
 
     torch.cuda.synchronize()
     torch.cuda.memory._record_memory_history(max_entries=1000000)
