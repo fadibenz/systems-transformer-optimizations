@@ -49,10 +49,12 @@ def profile_memory(model:nn.Module,
 
         if full_run:
             if mixed_precision and scaler is not None:
+                optimizer.zero_grad()
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
                 scaler.update()
             else:
+                optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
 
