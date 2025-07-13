@@ -175,3 +175,45 @@ As expected, GEMM kernel dominates computation but elementwise kernel adds notic
 > + There are many kernel launches, indicating the need for fused operations. This would reduce the number of launches and thereby minimize CPU dispatch overhead.
 > + I noticed significant std for the GEMM kernel time estimation, this might be due to the small batch size, which leads to non-optimal kernel selection.
 
+#### Full pass:
+
+Same config and hyperparams as before, now with the full pass:
+
+##### CUDA Timeline Breakdown
+
+| Row         | What It Shows                               | Observations                                          | Interpretation                                |
+|-------------|---------------------------------------------|-------------------------------------------------------|-----------------------------------------------|
+| **CUDA HW** | Actual GPU kernel execution                 | 91.5% compute, 8.5% memory (mostly 95.6% H2D upfront) | GPU is busy, memory not a bottleneck          |
+|             |                                             | Small gaps (`~0.002–0.004 ms`)                        | Minor idle period. good utilization           |
+| **CUDA API**| Host-side kernel/mem launches               | Gaps up to `~0.3 ms` between calls                    | CPU-side dispatch overhead can be significant |
+
+
+During kernel execution (forward and backward) we only have `Memset` memory operations.
+
+Now for specifics:
+
+- **Full pass time**: `525.12ms`, of which forward pass (`172 ms`) and backward pass (`262.8 ms`)
+- **Kernel launches per forward**: `2,565`, **Kernel launches per backward**: `4279` 
+
+Details for the forward pass are the same as before. We will focus on the backward pass now. 
+
+##### Top 3 Kernels (by total time)
+
+Results are filtered for one backward pass:
+
+| Name                      | Calls | Avg Time   | Time % | std    | Notes                                |
+|---------------------------|-------|------------|--------|--------|--------------------------------------|
+| `volta_sgemm_128x64_nn`   | 191   | 420.8 µs   | 31.4%  | 276 µs | First matrix multiplications         |
+| `volta_sgemm_128x64_nn`   | 191   | 64.9 µs    | 31.4%  | 278 µs | Second matrix multiplication         |
+| `elementwise_kernel`      | 382   | 271.192 µs | 23.1%  | 20 µs  | Point wise ops (likely activations)  |
+
+> Notes
+> + Backward pass takes approximately two times as much as the forward pass; we can see clearly that this is because 
+> when backpropagating we do two matrix multiplies (for each parameter, two derivatives).
+> + We can still notice that matrix multiplication has a big standard deviation and the same as before the number of calls 
+> to launch kernels is significant. Again, we need to look into how to fuse.
+> + In contrast to the forward pass, `elementwise_kernel` takes significant time, probably because 
+> the SwiGLU derivative is somewhat complex and the lack of fusion.
+
+
+#### Deep-dive into attention:
