@@ -7,7 +7,6 @@ from contextlib import nullcontext
 import torch.cuda.nvtx as nvtx
 from torch.amp.grad_scaler import GradScaler
 from utils import get_args, initialize_model_data
-from annotated_scaled_dot_product_attention import annotated_scaled_dot_product_attention
 
 
 def profile(model:nn.Module,

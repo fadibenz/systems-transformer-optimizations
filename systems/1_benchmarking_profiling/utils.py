@@ -4,6 +4,7 @@ from argparse import Namespace
 import torch
 from systems.utils import load_config, set_seed_everything
 from transformer_implementation.model import BasicsTransformerLM
+import transformer_implementation
 import torch.nn as nn
 from annotated_scaled_dot_product_attention import annotated_scaled_dot_product_attention
 
