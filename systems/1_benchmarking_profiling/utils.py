@@ -1,7 +1,11 @@
 import argparse
+from argparse import Namespace
+
 import torch
 from systems.utils import load_config, set_seed_everything
 from transformer_implementation.model import BasicsTransformerLM
+import torch.nn as nn
+from annotated_scaled_dot_product_attention import annotated_scaled_dot_product_attention
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -29,7 +33,9 @@ def get_args():
 
     return parser.parse_args()
 
-def initialize_model_data(args, device):
+def initialize_model_data(args: Namespace,
+                          device: str,
+                          profile: bool = False) ->[nn.Module, torch.Tensor]:
     set_seed_everything(args.seed)
 
     config = load_config("systems/configs/model_sizing.YAML")
@@ -38,6 +44,9 @@ def initialize_model_data(args, device):
     batch_size = config["batch_size"]
 
     model_config = config[args.model]
+
+    if profile:
+        BasicsTransformerLM.scaled_dot_product_attention = annotated_scaled_dot_product_attention
 
     model = BasicsTransformerLM(
         d_model=model_config["d_model"],

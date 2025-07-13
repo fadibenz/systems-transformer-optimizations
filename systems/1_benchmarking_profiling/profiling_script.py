@@ -95,8 +95,7 @@ def profile(model:nn.Module,
 if __name__ == "__main__":
     args = get_args()
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, random_input_data = initialize_model_data(args, device)
-
+    model, random_input_data = initialize_model_data(args, device, True)
     print("\n ----Started profiling----")
 
     print(f"Running on device: {device} ({torch.cuda.get_device_name(0) if device == 'cuda' else 'CPU'})")
