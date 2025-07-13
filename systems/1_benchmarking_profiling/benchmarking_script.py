@@ -50,16 +50,19 @@ def benchmark_operation(model:nn.Module,
 
         start_time = timeit.default_timer()
 
+
         with context_manager:
             output = model(data)
             if full_run:
                 loss = output.mean()
+
         if full_run:
             if mixed_precision and scaler is not None:
                 scaler.scale(loss).backward()
                 scaler.update()
             else:
                 loss.backward()
+
         torch.cuda.synchronize()
 
         run_time = timeit.default_timer() - start_time
