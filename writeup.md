@@ -132,3 +132,46 @@ These are the results of the full training pass, with the same parameters as bef
 > + The difference in performance becomes bigger as model size gets bigger (better hardware utilization)
 
 ### Nsight Systems Profiler:
+
+I started by profiling the large model with context length of 128. Overall statistics when running only the forward pass:
+
+
+
+#### Forward pass:
+
+##### CUDA Timeline Breakdown
+
+| Row         | What It Shows                               | Observations                                           | Interpretation                                |
+|-------------|---------------------------------------------|--------------------------------------------------------|-----------------------------------------------|
+| **CUDA HW** | Actual GPU kernel execution                 | 78.5% compute, 21.5% memory (mostly 99.2% H2D upfront) | GPU is busy, memory not a bottleneck          |
+|             |                                             | Small gaps (`~0.002–0.004 ms`)                         | Minor idle period. good utilization           |
+| **CUDA API**| Host-side kernel/mem launches               | Gaps up to `~0.3 ms` between calls                     | CPU-side dispatch overhead can be significant |
+
+
+
+Now, some specifics for one forward pass:
+
+- **Forward pass time**: `162.137 ms` (matches previous benchmarking results)
+- **Kernel launches per forward**: `2,565`
+- **GPU utilization**: **Good**. Kernels densely packed in CUDA HW row
+- **Launch overhead**: Somewhat notable. Gaps in CUDA API go up to `0.3 ms`
+- GEMM accounts for `~63%` of total forward time `(102 ms / 162 ms)`
+
+---
+
+##### Top 3 Kernels (by total time)
+
+These results are filtered for one forward pass:
+
+| Name                            | Calls | Avg Time | Time % | std    | Notes                             |
+|---------------------------------|-------|----------|--------|--------|-----------------------------------|
+| `volta_sgemm_128x64_tn`         | 253   | 406.8 µs | 81.6%  | 217 µs | Main matrix multiplications       |
+| `vectorized_elementwise_kernel` | 72    | 64.9 µs  | 3.7%   | 1 µs   | Fused/optimized pointwise ops     |
+| `elementwise_kernel`            | 434   | 10.4 µs  | 3.4%   | 2 µs   | Pointwise ops (likely activations)|
+
+As expected, GEMM kernel dominates computation but elementwise kernel adds noticeable overhead
+
+>Final notes
+> + There are many kernel launches, indicating the need for fused operations. This would reduce the number of launches and thereby minimize CPU dispatch overhead.
+> + I noticed significant std for the GEMM kernel time estimation, this might be due to the small batch size, which leads to non-optimal kernel selection.
+
