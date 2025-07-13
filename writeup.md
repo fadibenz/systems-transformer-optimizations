@@ -245,3 +245,4 @@ The GPU executes in ~500 µs, but due to CPU dispatch latency, the total time ri
 If we could fuse the entire attention computation into a single composite kernel, we could halve the total runtime.
 > + **Softmax is around two times less expensive than Matrix multiplications in terms of FLOPs, but it still takes around the same time!**
 
+### Memory Profiling:
