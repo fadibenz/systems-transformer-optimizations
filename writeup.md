@@ -257,6 +257,7 @@ you can find the script in `systems/1_benchmarking_profiling/memory_profiling_sc
 
 First, let's look at this diagram I created; it shows my understanding of memory management.
 
+![](writeup_assets/memoryviz_full_pass_512.png)
 
 + The initial baseline representing the model size and data is around `2GB`, it stays allocated through the full profiling.
 + In the first forward pass, we see the activation buildup, we go from `2GB` to around `6GB`, meaning activations are quite large.
@@ -264,16 +265,38 @@ First, let's look at this diagram I created; it shows my understanding of memory
 + Afterward, we can see the optimizer states getting created; this is what we would expect, and memory goes up to a new baseline of around `6.8GB`.
 + The loop now repeats, activations buildup again, as gradients are calculated memory goes down, and we go down to the optimizer state baseline.
 
+A simplified view is that of the forward pass,
+we can see how memory goes up and down as we calculate activations and then gradients,
+I didn’t use `no_grad` or we would've had different results.
 
-A simplified view is that of the forward pass, we can see how memory goes up and down as we calculate activations and then gradients, I didn’t use `no_grad` or we would've had different results.
-
+![](writeup_assets/memoryviz_forward_512.png)
 
 ###### Difference between different context lengths:
 
+These are the peak memory usage for the different context lengths when doing a full training step.
 
-###### Mixed-precision vs. Full-precision:
+| context length | Peak Memory |
+|----------------|-------------|
+| 128            | ~7 GB       | 
+| 256            | ~8.2 GB     | 
+| 512            | ~10.8 GB    | 
 
+As expected, memory usage grows with context length. 
 
+When using Mixed-precision with the `512` context length, the peak memory usage
+stays approximately the same with around ~ 10GB. 
+
+This was surprising, as I expected a more dramatic decrease, this might be because the model and batch size are small 
+or simply because T4 is not optimized for mixed-precision compared to `A100/H100`
+
+###### Stack trace revelation:
+
+To get a better idea of what uses most memory,
+I used `memoryviz` with 10% detail  and inspected the largest 
+allocations, they belong to the forward pass activations, specifically the attention calculations!
+
+This aligns with theoretical expectations. To better the memory and compute implications of attention, 
+I will go into thoroughly benchmarking it.
 
 
 ### Attention Benchmark Summary
