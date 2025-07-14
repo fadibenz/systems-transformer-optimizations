@@ -1,0 +1,186 @@
+
+--Started Benchmarking--
+
+Benchmarking attention for d_model=16, seq_len=256
+
+ Using:       
+    full precision        
+    seed: 2027 
+
+ forward pass stats:      avg_time: 0.001     std: 0.000
+
+ Allocated memory before backward pass: 13.05 MB
+
+ backward pass stats:      avg_time: 0.002     std: 0.008
+
+Benchmarking attention for d_model=16, seq_len=1024
+
+ Using:       
+      full precision        
+      seed: 2027 
+
+ forward pass stats:      avg_time: 0.002     std: 0.000
+
+ Allocated memory before backward pass: 87.08 MB
+
+ backward pass stats:      avg_time: 0.003     std: 0.000
+
+Benchmarking attention for d_model=16, seq_len=3096
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.010     std: 0.000
+
+ Allocated memory before backward pass: 652.19 MB
+
+ backward pass stats:      avg_time: 0.031     std: 0.000
+
+Benchmarking attention for d_model=16, seq_len=8192
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.067     std: 0.000
+
+ Allocated memory before backward pass: 4452.91 MB
+
+ backward pass stats:      avg_time: 0.213     std: 0.001
+
+Benchmarking attention for d_model=16, seq_len=16384
+
+ Using:       full precision        seed: 2027 
+OOM at d_model=16, seq_len=16384. Skipping...
+
+Benchmarking attention for d_model=32, seq_len=256
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.000     std: 0.000
+
+ Allocated memory before backward pass: 21.77 MB
+
+ backward pass stats:      avg_time: 0.001     std: 0.000
+
+Benchmarking attention for d_model=32, seq_len=1024
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.001     std: 0.000
+
+ Allocated memory before backward pass: 87.87 MB
+
+ backward pass stats:      avg_time: 0.004     std: 0.000
+
+Benchmarking attention for d_model=32, seq_len=3096
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.010     std: 0.000
+
+ Allocated memory before backward pass: 655.33 MB
+
+ backward pass stats:      avg_time: 0.031     std: 0.000
+
+Benchmarking attention for d_model=32, seq_len=8192
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.068     std: 0.000
+
+ Allocated memory before backward pass: 4459.20 MB
+
+ backward pass stats:      avg_time: 0.217     std: 0.001
+
+Benchmarking attention for d_model=32, seq_len=16384
+
+ Using:       full precision        seed: 2027 
+OOM at d_model=32, seq_len=16384. Skipping...
+
+Benchmarking attention for d_model=64, seq_len=256
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.001     std: 0.000
+
+ Allocated memory before backward pass: 22.16 MB
+
+ backward pass stats:      avg_time: 0.001     std: 0.000
+
+Benchmarking attention for d_model=64, seq_len=1024
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.001     std: 0.000
+
+ Allocated memory before backward pass: 89.44 MB
+
+ backward pass stats:      avg_time: 0.004     std: 0.000
+
+Benchmarking attention for d_model=64, seq_len=3096
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.011     std: 0.001
+
+ Allocated memory before backward pass: 660.94 MB
+
+ backward pass stats:      avg_time: 0.033     std: 0.001
+
+Benchmarking attention for d_model=64, seq_len=8192
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.076     std: 0.001
+
+ Allocated memory before backward pass: 4471.78 MB
+
+ backward pass stats:      avg_time: 0.230     std: 0.002
+
+Benchmarking attention for d_model=64, seq_len=16384
+
+ Using:       full precision        seed: 2027 
+OOM at d_model=64, seq_len=16384. Skipping...
+
+Benchmarking attention for d_model=128, seq_len=256
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.000     std: 0.000
+
+ Allocated memory before backward pass: 22.95 MB
+
+ backward pass stats:      avg_time: 0.001     std: 0.000
+
+Benchmarking attention for d_model=128, seq_len=1024
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.002     std: 0.000
+
+ Allocated memory before backward pass: 92.59 MB
+
+ backward pass stats:      avg_time: 0.004     std: 0.000
+
+Benchmarking attention for d_model=128, seq_len=3096
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.013     std: 0.001
+
+ Allocated memory before backward pass: 668.84 MB
+
+ backward pass stats:      avg_time: 0.038     std: 0.000
+
+Benchmarking attention for d_model=128, seq_len=8192
+
+ Using:       full precision        seed: 2027 
+
+ forward pass stats:      avg_time: 0.094     std: 0.001
+
+ Allocated memory before backward pass: 4496.95 MB
+
+ backward pass stats:      avg_time: 0.283     std: 0.002
+
+Benchmarking attention for d_model=128, seq_len=16384
+
+ Using:       full precision        seed: 2027 
+OOM at d_model=128, seq_len=16384. Skipping...
