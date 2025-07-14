@@ -17,4 +17,12 @@
 - Analyzed the backward pass and went into the attention profile in detail, results in `writeup.md`.
 - Added a script for profiling memory.
 - Run memory profiling on different context lengths, inference vs. training and FP vs. MP.
-- 
+
+# 2025-07-14
+- Used `memoryviz` to visualize and understand memory allocation.
+- Finished writeup section on memory profiling and added Figma diagrams.
+- Wrote code to benchmark pytorch attention and memory allocation.
+- Added options for lower precision and for compiled version.
+- Added writeup section and analysis of raw vs. compiled implementation of attention.
+- Read and understood FlashAttention 1 and 2, wrote summary in `writeup.md`.
+- Implemented FlashAttention in pytorch using the torch.autograd.Function signature
