@@ -14,7 +14,6 @@ class FlashAttention2(torch.autograd.Function):
                 is_causal: bool = False)-> torch.Tensor:
 
 
-        # Simple arithmetic
         B_q = 16
         B_k = 16
 
@@ -28,7 +27,6 @@ class FlashAttention2(torch.autograd.Function):
         L: torch.Tensor = torch.zeros(b, N_q)
         O: torch.Tensor = torch.empty_like(Q, requires_grad=True)
 
-        # Main algorithm
         # Outer Loop
         for i in range(0, N_q, B_q):
             q_tile = Q[:, i:i + B_q, :] # load Q_i
