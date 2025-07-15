@@ -18,7 +18,7 @@
 - Added a script for profiling memory.
 - Run memory profiling on different context lengths, inference vs. training and FP vs. MP.
 
-# 2025-07-14
+# 2025-07-14 (8h)
 - Used `memoryviz` to visualize and understand memory allocation.
 - Finished writeup section on memory profiling and added Figma diagrams.
 - Wrote code to benchmark pytorch attention and memory allocation.

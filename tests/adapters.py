@@ -1,23 +1,20 @@
 from __future__ import annotations
-
 from typing import Type
-
 import torch
-
+import importlib
+from systems.flashattention2_triton.flashAttention2_pytorch import FlashAttention2
 
 
 def get_flashattention_autograd_function_pytorch() -> Type:
     """
-    Returns a torch.autograd.Function subclass that implements RMSNorm.
-    The expectation is that this class will implement RMSNorm
+    Returns a torch.autograd.Function subclass that implements attention.
+    The expectation is that this class will implement attention
     using standard PyTorch operations.
 
     Returns:
         A class object (not an instance of the class)
     """
-    # For example: return MyRMSNormAutogradFunctionClass
-    raise NotImplementedError
-
+    return FlashAttention2
 
 def get_flashattention_autograd_function_triton() -> Type:
     """
