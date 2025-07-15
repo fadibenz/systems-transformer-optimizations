@@ -82,6 +82,7 @@ def flash_fwd_kernel(
         V = tl.load(V_block_ptr, boundary_check=(0, 1), padding_option="zero")
 
         S = tl.dot(Q, K) * scale
+
         if is_causal:
             start_idx = i * K_TILE_SIZE
             key_indices = start_idx + tl.arange(0, K_TILE_SIZE)
