@@ -71,7 +71,7 @@ def flash_fwd_kernel(
     Q = tl.load(Q_block_ptr, boundary_check=(0, 1), padding_option="zero")
 
     if is_causal:
-        query_indices = seq_tile_index * Q_TILE_SIZE + tl.arrange(0, Q_TILE_SIZE)
+        query_indices = seq_tile_index * Q_TILE_SIZE + tl.arange(0, Q_TILE_SIZE)
 
     O_i = tl.zeros((Q_TILE_SIZE, D), dtype=tl.float32)
     acc_denominator = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
@@ -81,10 +81,10 @@ def flash_fwd_kernel(
         K = tl.load(K_block_ptr, boundary_check=(1, 0), padding_option="zero")
         V = tl.load(V_block_ptr, boundary_check=(0, 1), padding_option="zero")
 
-
         S = tl.dot(Q, K) * scale
         if is_causal:
-            key_indices = tl.arrange(i, i * K_TILE_SIZE)
+            start_idx = i * K_TILE_SIZE
+            key_indices = start_idx + tl.arange(0, K_TILE_SIZE)
             mask = query_indices[:, None] <= key_indices[None, :]
             S = tl.where(mask, S, -1e-6)
 
