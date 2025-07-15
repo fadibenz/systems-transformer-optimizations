@@ -4,7 +4,7 @@ import torch
 from flashAttention2_fwd_triton import flash_fwd_kernel
 import triton.language as tl
 
-class FlashAttention2(torch.autograd.Function):
+class FlashAttention2Triton(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx,
