@@ -86,8 +86,8 @@ def flash_fwd_kernel(
         if is_causal:
             start_idx = i * K_TILE_SIZE
             key_indices = start_idx + tl.arange(0, K_TILE_SIZE)
-            mask = query_indices[:, None] <= key_indices[None, :]
-            S = tl.where(mask, S, -1e-6)
+            mask = query_indices[:, None] >= key_indices[None, :]
+            S = tl.where(mask, S, float("-inf"))
 
         _max_new = tl.maximum(_max, tl.max(S, axis=-1))
 
