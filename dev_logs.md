@@ -29,9 +29,12 @@
 
 # 2025-07-15
 - Debugged the pure pytorch version of attention and pushed a stable version.
+- Learned triton from official docs, I will add a section of my understanding in the weekend.
 - Implemented FlashAttention2 forward pass in Triton.
 - Implemented PyTorch wrapper for triton kernel.
 - Debugged Triton implementation and pushed a stable version including:
   - Added porper broadcasting for elementwise-operations.
   - Added an explicit device and dtype declaration in output tensors.
   - Replaced the explicit `tl.transpose` call with pointer arithmetic to load keys directly transposed.
+- Added causal masking to Triton Implementation
+- Froward pass passes all tests. 
