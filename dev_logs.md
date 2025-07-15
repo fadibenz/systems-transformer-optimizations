@@ -26,3 +26,12 @@
 - Added writeup section and analysis of raw vs. compiled implementation of attention.
 - Read and understood FlashAttention 1 and 2, wrote summary in `writeup.md`.
 - Implemented FlashAttention in pytorch using the torch.autograd.Function signature
+
+# 2025-07-15
+- Debugged the pure pytorch version of attention and pushed a stable version.
+- Implemented FlashAttention2 forward pass in Triton.
+- Implemented PyTorch wrapper for triton kernel.
+- Debugged Triton implementation and pushed a stable version including:
+  - Added porper broadcasting for elementwise-operations.
+  - Added an explicit device and dtype declaration in output tensors.
+  - Replaced the explicit `tl.transpose` call with pointer arithmetic to load keys directly transposed.
