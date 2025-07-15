@@ -1,8 +1,7 @@
 import math
 from typing import Any
 import torch
-from flashAttention2_fwd_triton import flash_fwd_kernel
-import triton.language as tl
+from systems.flashattention2_triton.flashAttention2_fwd_triton  import flash_fwd_kernel
 
 class FlashAttention2Triton(torch.autograd.Function):
 
@@ -27,7 +26,7 @@ class FlashAttention2Triton(torch.autograd.Function):
         K_TILE_SIZE = 32
 
 
-        T_q = tl.cdiv(N_QUERIES, Q_TILE_SIZE)
+        T_q = (N_QUERIES + Q_TILE_SIZE - 1) // Q_TILE_SIZE
         scale = 1 / math.sqrt(D)
 
         flash_fwd_kernel[(T_q, BATCH)](
