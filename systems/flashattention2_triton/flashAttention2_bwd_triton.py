@@ -99,13 +99,16 @@ def flash_bwd_kernel(
         order=(0,)
     )
 
-
     K_j = tl.load(K_block_ptr, boundary_check= (0, 1), padding_option="zero")
     V_j = tl.load(V_block_ptr, boundary_check= (0, 1), padding_option="zero")
+
 
     dK_j = tl.zeros((K_TILE_SIZE, D), dtype=tl.float32)
     dV_j = tl.zeros((K_TILE_SIZE, D), dtype=tl.float32)
     d_offsets = tl.arange(0, D)
+
+    if is_causal:
+        k_offsets = seq_len_index * K_TILE_SIZE + tl.arange(0, K_TILE_SIZE)
 
     for i in range(tl.cdiv(N_QUERIES, Q_TILE_SIZE)):
         q_offsets = i * Q_TILE_SIZE + tl.arange(0, Q_TILE_SIZE)
@@ -120,6 +123,11 @@ def flash_bwd_kernel(
         D_i = tl.sum(dO_i * O_i, axis=-1)
 
         S_i = tl.dot( Q_i, tl.trans(K_j)) * scale
+
+        if is_causal:
+            mask = q_offsets[:, None] >= k_offsets[None, :]
+            S_i = tl.where(mask, S_i, -1e6)
+
         P_i = tl.exp(S_i - L_i[:, None])
         dV_j += tl.dot(tl.trans(P_i), dO_i)
 
