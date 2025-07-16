@@ -70,14 +70,7 @@ def flash_bwd_kernel(
         order=(1, 0)
     )
 
-    dQ_block_ptr = tl.make_block_ptr(
-        dQ_ptr + batch_index * stride_qb,
-        shape=(N_QUERIES, D),
-        strides=(stride_qq, stride_qd),
-        offsets=(0, 0),
-        block_shape=(Q_TILE_SIZE, D),
-        order=(1, 0)
-    )
+    dQ_batch_ptr = dQ_ptr + batch_index * stride_qb
 
     O_block_ptr = tl.make_block_ptr(
         O_ptr + batch_index * stride_ob,
@@ -101,7 +94,7 @@ def flash_bwd_kernel(
         L_ptr + batch_index * stride_lb,
         shape=(N_QUERIES,),
         strides=(stride_lq,),
-        offsets=(seq_len_index * Q_TILE_SIZE,),
+        offsets=(0,),
         block_shape=(Q_TILE_SIZE,),
         order=(0,)
     )
@@ -112,11 +105,16 @@ def flash_bwd_kernel(
 
     dK_j = tl.zeros((K_TILE_SIZE, D), dtype=tl.float32)
     dV_j = tl.zeros((K_TILE_SIZE, D), dtype=tl.float32)
+    d_offsets = tl.arange(0, D)
 
     for i in range(tl.cdiv(N_QUERIES, Q_TILE_SIZE)):
+        q_offsets = i * Q_TILE_SIZE + tl.arange(0, Q_TILE_SIZE)
+        q_mask = q_offsets < N_QUERIES
+        dQ_i_ptrs = dQ_batch_ptr + (q_offsets[:, None] * stride_qq + d_offsets[None, :] * stride_qd)
+
         Q_i = tl.load(Q_block_ptr, boundary_check= (0, 1), padding_option="zero")
         O_i = tl.load(O_block_ptr, boundary_check= (0, 1), padding_option="zero")
-        L_i = tl.load(L_block_ptr, boundary_check=(0, 1), padding_option="zero")
+        L_i = tl.load(L_block_ptr, boundary_check=(0,), padding_option="zero")
         dO_i = tl.load(dO_block_ptr, boundary_check= (0, 1), padding_option="zero")
 
         D_i = tl.sum(dO_i * O_i, axis=-1)
@@ -129,14 +127,13 @@ def flash_bwd_kernel(
 
         dS_i = P_i * (dP_i - D_i[:, None]) * scale
 
-        tl.atomic_add(dQ_block_ptr, tl.dot(dS_i, K_j))
-        dK_j += tl.trans(dS_i, Q_i)
+        tl.atomic_add(dQ_i_ptrs, tl.dot(dS_i, K_j), mask=q_mask[:, None])
+        dK_j += tl.dot(tl.trans(dS_i), Q_i)
 
         Q_block_ptr = tl.advance(Q_block_ptr, (Q_TILE_SIZE, 0))
         O_block_ptr = tl.advance(O_block_ptr, (Q_TILE_SIZE, 0))
-        L_block_ptr = tl.advance(L_block_ptr, (Q_TILE_SIZE, 0))
+        L_block_ptr = tl.advance(L_block_ptr, (Q_TILE_SIZE,))
 
-        dQ_block_ptr = tl.advance(dQ_block_ptr, (Q_TILE_SIZE, 0))
         dO_block_ptr = tl.advance(dO_block_ptr, (Q_TILE_SIZE, 0))
 
     tl.store(dK_block_ptr, dK_j, boundary_check=(0, 1))
