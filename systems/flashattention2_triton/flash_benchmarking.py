@@ -21,8 +21,8 @@ def benchmark_attention(
         print("Must run this code with GPU")
         sys.exit(1)
 
-    dtype = torch.float32 if not half_precision else torch.float16
-    attention = scaled_dot_product_attention if not use_flash else FlashAttention2Triton.apply
+    dtype = torch.float16 if half_precision else torch.float32
+    attention = FlashAttention2Triton.apply if use_flash else scaled_dot_product_attention
 
     Q, K, V = torch.randn(batch_size, seq_len, d_model, device="cuda", dtype=dtype, requires_grad=True)
 
@@ -33,32 +33,32 @@ def benchmark_attention(
         mask = True
 
     # Forward pass
-    results_forward = triton.testing.do_bench(attention(Q, K, V, mask), rep=10000, warmup=500)
+    results_forward_pass = triton.testing.do_bench(lambda: attention(Q, K, V, mask), rep=10000, warmup=500, quantiles=[0.2, 0.5, 0.8])
 
     # Backward pass
     O = attention(Q, K, V, mask)
+    grad_O = torch.randn_like(O)
 
-    def backward(O):
-        loss = O.sum()
-        loss.backward()
-
-    results_backward = triton.testing.do_bench(backward(O), rep=10000, warmup=500)
+    results_backward_pass = triton.testing.do_bench(lambda : O.backward(grad_O, retain_graph=True), rep=10000, warmup=500, quantiles=[0.2, 0.5, 0.8])
 
     # End-To-End pass
-    def forward_backward():
-        O = attention(Q, K, V, mask)
-        loss = O.sum()
-        loss.backward()
+    grad_O_e2e = torch.randn_like(O)
+    def forward_backward_e2e():
+       if Q.grad is not None:
+           Q.grad = None
+           K.grad = None
+           V.grad = None
+       output = attention(Q, K, V, mask)
+       output.backward(grad_O_e2e, retain_graph= True)
 
-    results_end_to_end = triton.testing.do_bench(forward_backward, rep=10000, warmup=500)
 
-    return results_forward, results_backward, results_end_to_end
+    results_e2e = triton.testing.do_bench(forward_backward_e2e, rep=10000, warmup=500)
+
+    return results_forward_pass, results_backward_pass, results_e2e
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--iters", type=int, default=100)
-    parser.add_argument("--warmup_iters", type=int, default=5)
     parser.add_argument("--seed", type=int, default=2025)
     parser.add_argument("--use_flash", action="store_true", help="Run with JIT compiled attention")
     parser.add_argument("--half_precision", action="store_true", help="use half-precision for attention" )
@@ -72,11 +72,10 @@ if __name__ == "__main__":
 
     for d_model, seq_len in itertools.product(config["d_model"], config["seq_len"]):
         print(f"\nBenchmarking attention for d_model={d_model}, seq_len={seq_len}")
-
         print(f"\n Using: "
-              f"{'      full precision' if not args.half_precision else 'half precision'}" 
-              f"{'      FlashAttention2' if args.use_flash else 'PyTorch Attention'}"
-              f"        seed: {args.seed} ")
+              f"\n{'      full precision' if not args.half_precision else 'half precision'}" 
+              f"\n{'      FlashAttention2' if args.use_flash else 'PyTorch Attention'}"
+              f"\n        seed: {args.seed} ")
 
         try:
             results_forward, results_backward, results_end_to_end =  benchmark_attention(d_model,
