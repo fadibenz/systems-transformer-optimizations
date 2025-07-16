@@ -1,0 +1,449 @@
+--Started Benchmarking--
+
+Benchmarking attention for d_model=16, seq_len=128
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [0.040672000497579575, 0.04095999896526337, 0.040991999208927155]
+
+ Backward pass Results:
+ [0.07321599870920181, 0.07366400212049484, 0.07372800260782242]
+
+ End-To-End Results:
+ [0.10255999863147736, 0.10342399775981903, 0.11059200018644333]
+
+Benchmarking attention for d_model=16, seq_len=256
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [0.043776001781225204, 0.044576000422239304, 0.04505600035190582]
+
+ Backward pass Results:
+ [0.08636800199747086, 0.08736000210046768, 0.08806400001049042]
+
+ End-To-End Results:
+ [0.11695999652147293, 0.1432799994945526, 0.31887999176979065]
+
+Benchmarking attention for d_model=16, seq_len=1024
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [0.2678079903125763, 0.2683199942111969, 0.2698880136013031]
+
+ Backward pass Results:
+ [0.6452479958534241, 0.647167980670929, 0.6490880250930786]
+
+ End-To-End Results:
+ [0.9031680226325989, 0.9052159786224365, 0.907263994216919]
+
+Benchmarking attention for d_model=16, seq_len=3096
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [2.3953919410705566, 2.397887945175171, 2.4002559185028076]
+
+ Backward pass Results:
+ [5.329964637756348, 5.333568096160889, 5.337465572357178]
+
+ End-To-End Results:
+ [7.7066240310668945, 7.710720062255859, 7.715308761596679]
+
+Benchmarking attention for d_model=16, seq_len=8192
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [15.804415702819824, 15.812607765197754, 15.819340896606445]
+
+ Backward pass Results:
+ [35.71262817382812, 35.75689697265625, 35.78479232788086]
+
+ End-To-End Results:
+ [51.46250228881836, 51.49696159362793, 51.542789459228516]
+
+Benchmarking attention for d_model=16, seq_len=16384
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [63.18442077636718, 63.226593017578125, 63.286739349365234]
+
+ Backward pass Results:
+ [142.5199462890625, 142.61115264892578, 142.73013610839843]
+
+ End-To-End Results:
+ [205.7955322265625, 205.83790588378906, 205.87674865722656]
+
+Benchmarking attention for d_model=16, seq_len=32768
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+OOM at d_model=16, seq_len=32768. Skipping...
+
+Benchmarking attention for d_model=16, seq_len=65536
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+OOM at d_model=16, seq_len=65536. Skipping...
+
+Benchmarking attention for d_model=32, seq_len=128
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [0.042527999728918076, 0.04294399917125702, 0.043007999658584595]
+
+ Backward pass Results:
+ [0.0745600014925003, 0.07539200037717819, 0.07577600330114365]
+
+ End-To-End Results:
+ [0.10480000078678131, 0.10601600259542465, 0.16911999881267548]
+
+Benchmarking attention for d_model=32, seq_len=256
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [0.046592000871896744, 0.04710400104522705, 0.047359999269247055]
+
+ Backward pass Results:
+ [0.08822400122880936, 0.08950400352478027, 0.09020800143480301]
+
+ End-To-End Results:
+ [0.11952000111341476, 0.12070400267839432, 0.1231359988451004]
+
+Benchmarking attention for d_model=32, seq_len=1024
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [0.271263986825943, 0.27238398790359497, 0.2736639976501465]
+
+ Backward pass Results:
+ [0.6594560146331787, 0.6615039706230164, 0.6635519862174988]
+
+ End-To-End Results:
+ [0.9215999841690063, 0.9238399863243103, 0.9265599846839905]
+
+Benchmarking attention for d_model=32, seq_len=3096
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [2.4102718830108643, 2.4126720428466797, 2.416108751296997]
+
+ Backward pass Results:
+ [5.336025524139404, 5.339983940124512, 5.3440446853637695]
+
+ End-To-End Results:
+ [7.727104187011719, 7.732639789581299, 7.738048076629639]
+
+Benchmarking attention for d_model=32, seq_len=8192
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [15.743295669555664, 15.756768226623535, 15.776575851440429]
+
+ Backward pass Results:
+ [35.65232620239258, 35.70278549194336, 35.76974639892578]
+
+ End-To-End Results:
+ [51.357696533203125, 51.3776969909668, 51.427277374267575]
+
+Benchmarking attention for d_model=32, seq_len=16384
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [64.6877227783203, 64.74329376220703, 64.8157455444336]
+
+ Backward pass Results:
+ [143.7548065185547, 143.82367706298828, 143.9337219238281]
+
+ End-To-End Results:
+ [208.41041870117186, 208.53555297851562, 208.66004943847656]
+
+Benchmarking attention for d_model=32, seq_len=32768
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+OOM at d_model=32, seq_len=32768. Skipping...
+
+Benchmarking attention for d_model=32, seq_len=65536
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+OOM at d_model=32, seq_len=65536. Skipping...
+
+Benchmarking attention for d_model=64, seq_len=128
+
+ Using:
+      full precision
+      PyTorch Attention
+      seed: 2025
+
+ Forward pass Results:
+ [0.04495999962091446, 0.04505600035190582, 0.04566400125622749]
+
+ Backward pass Results:
+ [0.07702399790287018, 0.07779199630022049, 0.07788799703121185]
+
+ End-To-End Results:
+ [0.1085439994931221, 0.17404799908399582, 0.37279360294342045]
+
+Benchmarking attention for d_model=64, seq_len=256
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [0.04886399954557419, 0.04915200173854828, 0.050175998359918594]
+
+ Backward pass Results:
+ [0.0931520015001297, 0.0942080020904541, 0.09603200107812881]
+
+ End-To-End Results:
+ [0.1266240030527115, 0.12758399546146393, 0.1457280069589615]
+
+Benchmarking attention for d_model=64, seq_len=1024
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [0.28832000494003296, 0.28889599442481995, 0.29049599170684814]
+
+ Backward pass Results:
+ [0.7004160284996033, 0.7024319767951965, 0.7041280269622803]
+
+ End-To-End Results:
+ [0.9832320213317871, 0.9854080080986023, 0.9879040122032166]
+
+Benchmarking attention for d_model=64, seq_len=3096
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [2.6533761024475098, 2.6584320068359375, 2.664646339416504]
+
+ Backward pass Results:
+ [5.734399795532227, 5.742591857910156, 5.752038383483887]
+
+ End-To-End Results:
+ [8.410022735595703, 8.425472259521484, 8.438099479675293]
+
+Benchmarking attention for d_model=64, seq_len=8192
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [17.64352035522461, 17.72915267944336, 17.79067497253418]
+
+ Backward pass Results:
+ [38.23811340332031, 38.316720962524414, 38.40576171875]
+
+ End-To-End Results:
+ [55.876531982421874, 56.01667022705078, 56.40252838134766]
+
+Benchmarking attention for d_model=64, seq_len=16384
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [70.00917053222656, 70.3407974243164, 70.60611114501953]
+
+ Backward pass Results:
+ [150.64536743164064, 151.24639892578125, 151.91168823242188]
+
+ End-To-End Results:
+ [221.53341979980468, 221.61383819580078, 221.71219787597659]
+
+Benchmarking attention for d_model=64, seq_len=32768
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+OOM at d_model=64, seq_len=32768. Skipping...
+
+Benchmarking attention for d_model=64, seq_len=65536
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+OOM at d_model=64, seq_len=65536. Skipping...
+
+Benchmarking attention for d_model=128, seq_len=128
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [0.04419200122356415, 0.04499199986457825, 0.04521600157022476]
+
+ Backward pass Results:
+ [0.07788799703121185, 0.07887999713420868, 0.0798719972372055]
+
+ End-To-End Results:
+ [0.10860799998044968, 0.10951999947428703, 0.11068800091743469]
+
+Benchmarking attention for d_model=128, seq_len=256
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [0.05257600173354149, 0.053247999399900436, 0.054207999259233475]
+
+ Backward pass Results:
+ [0.10444799810647964, 0.10512000322341919, 0.10664959996938707]
+
+ End-To-End Results:
+ [0.14027519822120665, 0.1520959958434105, 0.3539264023303986]
+
+Benchmarking attention for d_model=128, seq_len=1024
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [0.3418239951133728, 0.34329599142074585, 0.3447040021419525]
+
+ Backward pass Results:
+ [0.8074560165405273, 0.8104000091552734, 0.8132415771484376]
+
+ End-To-End Results:
+ [1.151308798789978, 1.1550719738006592, 1.15939199924469]
+
+Benchmarking attention for d_model=128, seq_len=3096
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [2.9987199306488037, 3.004415988922119, 3.0216063976287844]
+
+ Backward pass Results:
+ [6.494214248657227, 6.528800010681152, 6.53544979095459]
+
+ End-To-End Results:
+ [9.551238441467284, 9.565855979919434, 9.632377624511719]
+
+Benchmarking attention for d_model=128, seq_len=8192
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [19.73263931274414, 20.248767852783203, 20.592512130737305]
+
+ Backward pass Results:
+ [43.17795181274414, 43.6387825012207, 44.021568298339844]
+
+ End-To-End Results:
+ [63.131649017333984, 63.77300834655762, 64.80912017822266]
+
+Benchmarking attention for d_model=128, seq_len=16384
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+
+ Forward pass Results:
+ [81.84501190185547, 82.40499114990234, 84.65252685546875]
+
+ Backward pass Results:
+ [178.42864379882812, 179.80726623535156, 180.81474914550782]
+
+ End-To-End Results:
+ [267.5451477050781, 268.4807586669922, 271.26617431640625]
+
+Benchmarking attention for d_model=128, seq_len=32768
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+OOM at d_model=128, seq_len=32768. Skipping...
+
+Benchmarking attention for d_model=128, seq_len=65536
+
+ Using:
+      full precision
+PyTorch Attention
+        seed: 2025
+OOM at d_model=128, seq_len=65536. Skipping...
