@@ -1,7 +1,9 @@
 import math
-from typing import Any
 import torch
+import triton
+
 from systems.flashattention2_triton.flashAttention2_fwd_triton  import flash_fwd_kernel
+from systems.flashattention2_triton.flashAttention2_bwd_triton  import flash_bwd_kernel
 
 class FlashAttention2Triton(torch.autograd.Function):
 
@@ -27,7 +29,7 @@ class FlashAttention2Triton(torch.autograd.Function):
         K_TILE_SIZE = 32
 
 
-        T_q = (N_QUERIES + Q_TILE_SIZE - 1) // Q_TILE_SIZE
+        T_q = triton.cdiv(N_QUERIES, Q_TILE_SIZE)
         scale = 1.0 / math.sqrt(float(D))
 
         flash_fwd_kernel[(T_q, BATCH)](
@@ -45,10 +47,45 @@ class FlashAttention2Triton(torch.autograd.Function):
             K_TILE_SIZE,
             is_causal
         )
-
-        ctx.save_for_backward(L)
+        ctx.is_causal = is_causal
+        ctx.save_for_backward(Q, K, V, O, L)
         return O
 
     @staticmethod
-    def backward(ctx: Any, *grad_outputs: Any):
-        raise NotImplemented
+    def backward(ctx, *grad_outputs):
+        Q, K, V, O, L = ctx.saved_tensors
+        dO = grad_outputs[0]
+
+        BATCH, N_QUERIES, D = Q.size()
+        N_KEYS = K.size(-2)
+
+        Q_TILE_SIZE = 32
+        K_TILE_SIZE = 32
+
+        T_k = triton.cdiv(N_KEYS, K_TILE_SIZE)
+        scale = 1.0 / math.sqrt(float(D))
+
+        dQ = torch.zeros_like(Q)
+        dK = torch.zeros_like(K)
+        dV = torch.zeros_like(V)
+
+        flash_bwd_kernel[(T_k, BATCH)](
+            Q, K, V,
+            O, dO,
+            L,
+            dQ, dK, dV,
+            Q.stride(0), Q.stride(1), Q.stride(2),
+            K.stride(0), K.stride(1), K.stride(2),
+            V.stride(0), V.stride(1), V.stride(2),
+            O.stride(0), O.stride(1), O.stride(2),
+            L.stride(0), L.stride(1),
+
+            N_QUERIES, N_KEYS,
+            scale,
+            D,
+            Q_TILE_SIZE,
+            K_TILE_SIZE,
+            ctx.is_causal
+        )
+
+        return dQ, dK, dV, None

@@ -20,6 +20,7 @@ def flash_bwd_kernel(
         D: tl.constexpr,
         Q_TILE_SIZE: tl.constexpr,
         K_TILE_SIZE: tl.constexpr,
+        is_causal: tl.constexpr
 ):
     seq_len_index = tl.program_id(0)
     batch_index = tl.program_id(1)
