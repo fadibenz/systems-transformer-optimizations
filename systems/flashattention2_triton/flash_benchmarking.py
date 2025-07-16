@@ -24,7 +24,9 @@ def benchmark_attention(
     dtype = torch.float16 if half_precision else torch.float32
     attention = FlashAttention2Triton.apply if use_flash else scaled_dot_product_attention
 
-    Q, K, V = torch.randn(batch_size, seq_len, d_model, device="cuda", dtype=dtype, requires_grad=True)
+    Q = torch.randn(batch_size, seq_len, d_model, device="cuda", dtype=dtype, requires_grad=True)
+    K = torch.randn_like(Q, requires_grad=True)
+    V = torch.randn_like(Q, requires_grad=True)
 
     if not use_flash:
         flipped_mask = torch.triu(torch.ones(seq_len, seq_len, device="cuda"), 1).bool()
