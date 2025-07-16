@@ -101,10 +101,11 @@ def flash_bwd_kernel(
         L_ptr + batch_index * stride_lb,
         shape=(N_QUERIES,),
         strides=(stride_lq,),
-        offsets=(Q_TILE_SIZE,),
-        block_shape=(seq_len_index * Q_TILE_SIZE,),
+        offsets=(seq_len_index * Q_TILE_SIZE,),
+        block_shape=(Q_TILE_SIZE,),
         order=(0,)
     )
+
 
     K_j = tl.load(K_block_ptr, boundary_check= (0, 1), padding_option="zero")
     V_j = tl.load(V_block_ptr, boundary_check= (0, 1), padding_option="zero")
