@@ -25,9 +25,8 @@ class FlashAttention2Triton(torch.autograd.Function):
         O = torch.empty_like(Q)
         L = torch.empty((BATCH, N_QUERIES), device=Q.device, dtype=torch.float32)
 
-        Q_TILE_SIZE = 32
-        K_TILE_SIZE = 32
-
+        Q_TILE_SIZE = 64
+        K_TILE_SIZE = 64
 
         T_q = triton.cdiv(N_QUERIES, Q_TILE_SIZE)
         scale = 1.0 / math.sqrt(float(D))

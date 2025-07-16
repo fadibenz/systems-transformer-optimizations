@@ -35,13 +35,13 @@ def benchmark_attention(
         mask = True
 
     # Forward pass
-    results_forward_pass = triton.testing.do_bench(lambda: attention(Q, K, V, mask), rep=10000, warmup=500, quantiles=[0.2, 0.5, 0.8])
+    results_forward_pass = triton.testing.do_bench(lambda: attention(Q, K, V, mask), rep=5000, warmup=500, quantiles=[0.2, 0.5, 0.8])
 
     # Backward pass
     O = attention(Q, K, V, mask)
     grad_O = torch.randn_like(O)
 
-    results_backward_pass = triton.testing.do_bench(lambda : O.backward(grad_O, retain_graph=True), rep=10000, warmup=500, quantiles=[0.2, 0.5, 0.8])
+    results_backward_pass = triton.testing.do_bench(lambda : O.backward(grad_O, retain_graph=True), rep=5000, warmup=500, quantiles=[0.2, 0.5, 0.8])
 
     # End-To-End pass
     grad_O_e2e = torch.randn_like(O)
@@ -54,7 +54,7 @@ def benchmark_attention(
        output.backward(grad_O_e2e, retain_graph= True)
 
 
-    results_e2e = triton.testing.do_bench(forward_backward_e2e, rep=10000, warmup=500)
+    results_e2e = triton.testing.do_bench(forward_backward_e2e, rep=5000, warmup=500, quantiles=[0.2, 0.5, 0.8])
 
     return results_forward_pass, results_backward_pass, results_e2e
 
