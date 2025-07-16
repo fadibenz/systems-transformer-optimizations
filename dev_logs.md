@@ -38,3 +38,13 @@
   - Replaced the explicit `tl.transpose` call with pointer arithmetic to load keys directly transposed.
 - Added causal masking to Triton Implementation
 - Froward pass passes all tests. 
+
+# 2025-07-16
+- Implemented Backward pass in triton
+- Added causal masking in the backward pass.
+- Implemented script to benchmark FlashAttention2 against pure PyTorch
+- Started reading about ways to make my implementation even faster. 
+  - I will tune the tile sizes using `triton.autotune`
+  - I will replace the backward pass with two passes one for dQ and another for dK and dV to avoid atomics or synchronization between blocks.
+  - I will try to Stop program instances early when doing causal masking, skipping all tiles that are always all zero
+  - I will separate the non-masked tiles from the tile diagonals, computing the first without ever comparing indices, and the second with a single comparison
