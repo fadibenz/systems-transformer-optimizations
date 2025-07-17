@@ -3,7 +3,8 @@ import torch
 import triton
 
 from systems.flashattention2_triton.flashAttention2_fwd_triton  import flash_fwd_kernel
-from systems.flashattention2_triton.flashAttention2_bwd_triton  import flash_bwd_kernel
+from systems.flashattention2_triton.flashAttention2_bwd_triton import flash_bwd_kernel_dK_dV, flash_bwd_kernel_dQ
+
 
 class FlashAttention2Triton(torch.autograd.Function):
 
@@ -60,31 +61,28 @@ class FlashAttention2Triton(torch.autograd.Function):
 
         Q_TILE_SIZE = 32
         K_TILE_SIZE = 32
-
-        T_k = triton.cdiv(N_KEYS, K_TILE_SIZE)
         scale = 1.0 / math.sqrt(float(D))
 
         dQ = torch.zeros_like(Q)
         dK = torch.zeros_like(K)
         dV = torch.zeros_like(V)
 
-        flash_bwd_kernel[(T_k, BATCH)](
-            Q, K, V,
-            O, dO,
-            L,
-            dQ, dK, dV,
+        grid_dk_dv = (triton.cdiv(N_KEYS, K_TILE_SIZE), BATCH)
+        grid_dq = (triton.cdiv(N_QUERIES, Q_TILE_SIZE), BATCH)
+
+        common_args = [
+            Q, K, V, O, dO, L,
             Q.stride(0), Q.stride(1), Q.stride(2),
             K.stride(0), K.stride(1), K.stride(2),
             V.stride(0), V.stride(1), V.stride(2),
             O.stride(0), O.stride(1), O.stride(2),
             L.stride(0), L.stride(1),
+            N_QUERIES, N_KEYS, scale,
+            D, Q_TILE_SIZE, K_TILE_SIZE, ctx.is_causal
+        ]
 
-            N_QUERIES, N_KEYS,
-            scale,
-            D,
-            Q_TILE_SIZE,
-            K_TILE_SIZE,
-            ctx.is_causal
-        )
+        flash_bwd_kernel_dK_dV[grid_dk_dv](*common_args[:6], dK, dV, *common_args[6:])
+
+        flash_bwd_kernel_dQ([grid_dq])(*common_args[:6], dQ, *common_args[6:])
 
         return dQ, dK, dV, None
