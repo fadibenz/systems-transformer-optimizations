@@ -1,6 +1,20 @@
 import triton
 import triton.language as tl
 
+
+@triton.jit
+def _attention_step(Q, K, V, O_i, acc_denominator, _max, scale, mask=None):
+    S = tl.dot(Q, tl.trans(K)) * scale
+    if mask is not None:
+        S = tl.where(mask, S, float("-inf"))
+    _max_new = tl.maximum(_max, tl.max(S, axis=-1))
+    P = tl.exp(S - _max_new[:, None])
+    correction_term = tl.exp(_max - _max_new)
+    acc_denominator_new = correction_term * acc_denominator + tl.sum(P, axis=-1)
+    O_i_new = correction_term[:, None] * O_i + tl.dot(P, V)
+    return O_i_new, acc_denominator_new, _max_new
+
+
 @triton.jit
 def flash_fwd_kernel(
         Q_ptr, K_ptr, V_ptr,
@@ -80,67 +94,30 @@ def flash_fwd_kernel(
             K = tl.load(K_block_ptr, boundary_check=(1, 0), padding_option="zero")
             V = tl.load(V_block_ptr, boundary_check=(0, 1), padding_option="zero")
 
-            S = tl.dot(Q, tl.trans(K)) * scale
-
-            _max_new = tl.maximum(_max, tl.max(S, axis=-1))
-
-            P = tl.exp(S - _max_new[:, None])
-
-            correction_term = tl.exp(_max - _max_new)
-            acc_denominator = correction_term * acc_denominator + tl.sum(P, axis=-1)
-
-            O_i = correction_term[:, None] * O_i + tl.dot(P, V)
+            O_i, acc_denominator, _max = _attention_step(Q, K, V, O_i, acc_denominator, _max, scale)
 
             K_block_ptr = tl.advance(K_block_ptr, (K_TILE_SIZE, 0))
             V_block_ptr = tl.advance(V_block_ptr, (K_TILE_SIZE, 0))
-
-            _max = _max_new
-
         # Load diagonal entries, already pointing at these
 
         K = tl.load(K_block_ptr, boundary_check=(1, 0), padding_option="zero")
         V = tl.load(V_block_ptr, boundary_check=(0, 1), padding_option="zero")
-        S = tl.dot(Q, tl.trans(K)) * scale
 
         # Apply mask
 
         query_indices = seq_tile_index * Q_TILE_SIZE + tl.arange(0, Q_TILE_SIZE)
         key_indices = seq_tile_index * K_TILE_SIZE + tl.arange(0, K_TILE_SIZE)
-
         mask = query_indices[:, None] >= key_indices[None, :]
-        S = tl.where(mask, S, float("-inf"))
+        O_i, acc_denominator, _max = _attention_step(Q, K, V, O_i, acc_denominator, _max, scale, mask=mask)
 
-        _max_new = tl.maximum(_max, tl.max(S, axis=-1))
-
-        P = tl.exp(S - _max_new[:, None])
-
-        correction_term = tl.exp(_max - _max_new)
-        acc_denominator = correction_term * acc_denominator + tl.sum(P, axis=-1)
-
-        O_i = correction_term[:, None] * O_i + tl.dot(P, V)
-
-        _max = _max_new
     else:
         for i in range(tl.cdiv(N_KEYS, K_TILE_SIZE)):
 
             K = tl.load(K_block_ptr, boundary_check=(1, 0), padding_option="zero")
             V = tl.load(V_block_ptr, boundary_check=(0, 1), padding_option="zero")
-
-            S = tl.dot(Q, tl.trans(K)) * scale
-
-            _max_new = tl.maximum(_max, tl.max(S, axis=-1))
-
-            P = tl.exp(S - _max_new[:, None])
-
-            correction_term = tl.exp(_max - _max_new)
-            acc_denominator = correction_term * acc_denominator + tl.sum(P, axis=-1)
-
-            O_i = correction_term[:, None] * O_i + tl.dot(P, V)
-
+            O_i, acc_denominator, _max = _attention_step(Q, K, V, O_i, acc_denominator, _max, scale)
             K_block_ptr = tl.advance(K_block_ptr, (K_TILE_SIZE, 0))
             V_block_ptr = tl.advance(V_block_ptr, (K_TILE_SIZE, 0))
-
-            _max = _max_new
 
     O_i = O_i / acc_denominator[:, None]
     tl.store(O_block_ptr, O_i, boundary_check=(0, 1))
