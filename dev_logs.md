@@ -48,3 +48,13 @@
   - I will replace the backward pass with two passes one for dQ and another for dK and dV to avoid atomics or synchronization between blocks.
   - I will try to Stop program instances early when doing causal masking, skipping all tiles that are always all zero
   - I will separate the non-masked tiles from the tile diagonals, computing the first without ever comparing indices, and the second with a single comparison
+
+# 2025-07-17
++ Implemented all the previously discussed optimization tricks:
+  + Replaced the backward pass with two passes one for dQ and another for dK and dV to avoid atomics or synchronization between blocks.
+  + Implemented smart causal masking:
+    + replace the backward pass with two passes one for dQ and another for dK and dV to avoid atomics or synchronization between blocks.
+      - Stop program instances early when doing causal masking, skipping all tiles that are always all zero
+      - Separated the non-masked tiles from the tile diagonals, computing the first without ever comparing indices, and the second with a single comparison
++ Finished forward and backward sections in the writeup. 
++ Benchmarked extensively each new optimization trick I added and compared all of them in the writeup.
