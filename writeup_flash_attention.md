@@ -68,7 +68,7 @@ Apart from these concepts, the rest is straightforward and just follows basic py
 ### Code and benchmarking:
 
 My code for flash attention is in ``, I will try to optimize it form the current naive version and benchmark along the way (see commit history).
-Performance will be measured on T4 with batch size 1, sequence length 16,384 for queries, keys, and values, and `d_model` = 64.
+Performance will be measured on T4 with batch size 1, sequence length 16,384 for queries, keys, and values, and `d_model` = 64 and float32 for everything.
 
 I started by using a fixed tile sizes:
     - `Q_TILE_SIZE = 32` 
@@ -133,4 +133,17 @@ two passes over the input. One for $dQ$ and another for $dK$ and $dV$.
 This is simply done by writing two kernels (since we will parallelize different things) for each pass.
 The launch overhead is minor compared to the cost of atomic operations.
 
-> Using this approach lead to significant speedup of around compared to the naive implementation, the quantiles were as follows:
+> Using this approach lead to no significant speedup in my experiments, it might be due to the T4 architecture or the small d_model, 
+> better benchmarking would have involved different values for `d_model` and context length, unfortunately I can’t fit that on T4 and the daily quota is prohibitive.
+
+But separating the two kernels, would allow us to do smart causal masking on the kernel that calculates `dQ`, which would lead to speedup.
+
+#### Using smart masking:
+
+As expected, using smart masking on the second kernel allowed for a **1.5x speedup**, with quantiles:  `[162.21265869140623, 162.96388244628906, 163.57205505371095]` 
+
+## End-to-End Benchmarking vs. Pure PyTorch attention:
+
+To finish off this implementation, I decided to run an e2e final benchmark against a pure PyTorch version, I used the T4 GPU as always and `float16` for everything
+the different results are in the tables below:
+
