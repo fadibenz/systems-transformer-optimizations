@@ -55,7 +55,7 @@ class FlashAttention2Triton(torch.autograd.Function):
     def backward(ctx, *grad_outputs):
         Q, K, V, O, L = ctx.saved_tensors
         dO = grad_outputs[0]
-        D = torch.sum(O * dO, dim=-1)
+        D_sum = torch.sum(O * dO, dim=-1)
 
         BATCH, N_QUERIES, D = Q.size()
         N_KEYS = K.size(-2)
@@ -72,12 +72,13 @@ class FlashAttention2Triton(torch.autograd.Function):
         grid_dq = (triton.cdiv(N_QUERIES, Q_TILE_SIZE), BATCH)
 
         common_args = [
-            Q, K, V, O, dO, L, D,
+            Q, K, V, dO, L, D_sum,
             Q.stride(0), Q.stride(1), Q.stride(2),
             K.stride(0), K.stride(1), K.stride(2),
             V.stride(0), V.stride(1), V.stride(2),
             O.stride(0), O.stride(1), O.stride(2),
             L.stride(0), L.stride(1),
+            D_sum.stride(0), D_sum.stride(1),
             N_QUERIES, N_KEYS, scale,
             D, Q_TILE_SIZE, K_TILE_SIZE, ctx.is_causal
         ]
