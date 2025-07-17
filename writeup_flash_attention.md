@@ -70,7 +70,9 @@ Apart from these concepts, the rest is straightforward and just follows basic py
 My code for flash attention is in ``, I will try to optimize it form the current naive version and benchmark along the way (see commit history).
 Performance will be measured on T4 with batch size 1, sequence length 16,384 for queries, keys, and values, and `d_model` = 64.
 
-I started by using a fixed tile sizes 64, 64
+I started by using a fixed tile sizes:
+    - `Q_TILE_SIZE = 32` 
+    - `K_TILE_SIZE = 32`
 
 Benchmarking code can be found here `` and I used `triton.testing.do_bench`
 
@@ -107,12 +109,5 @@ The challenge is how to deal with this. I had several questions:
     a better approach than deciding boundaries inside the full loop is to loop through the keys up to the diagonal tile, finish the loop and process 
     the diagonal tile with the mask, the unmasked portion is naturally skipped.
 
-> This change lead to much-needed performance gains, using the same settings as before; 
-> we achieve a speedup of 2 over the naive masking version, quantiles are as follows. 
-
-
-I will move now to the backward pass implementation.
-
-## FlashAttention2 Backward pass:
-
-This is the pseudocode for the backward pass:
+> This change leads to much-needed performance gains, using the same settings as before; 
+> we achieve a **~2x speedup** over the naive masking version, quantiles are as follows:  [27.564274978637695, 27.74966335296631, 27.87450828552246]
