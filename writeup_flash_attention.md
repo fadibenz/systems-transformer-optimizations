@@ -2,7 +2,7 @@
 
 ## FlashAttention2 Forward pass:
 
-This is the pseudocode for FlashAttention:
+This is the pseudocode for FlashAttention forward pass:
 
 ![](writeup_assets/flashAttention_forward_pass.png)
 
@@ -111,3 +111,26 @@ The challenge is how to deal with this. I had several questions:
 
 > This change leads to much-needed performance gains, using the same settings as before; 
 > we achieve a **~2x speedup** over the naive masking version, quantiles are as follows:  [27.564274978637695, 27.74966335296631, 27.87450828552246]
+
+## FlashAttention2 Backward pass:
+
+This is the pseudocode for FlashAttention2 backward pass:
+
+![](writeup_assets/flashAttention_backward_pass.png)
+
+I started by implementing the kernel exactly as provided in the pseudocode you can find it under ``
+
+But the performance wasn’t good, the initial quantiles (using the same setup as before) were: ` [205.55262451171876, 206.35928344726562, 207.14888610839841]
+`
+
+To optimize the backward pass, we will go step-by-step as before.
+
+#### Avoiding atomic operations:
+
+Atomic operations write back to global memory, this bottlenecks performance, to avoid atomic operations I will instead do 
+two passes over the input. One for $dQ$ and another for $dK$ and $dV$.
+
+This is simply done by writing two kernels (since we will parallelize different things) for each pass.
+The launch overhead is minor compared to the cost of atomic operations.
+
+> Using this approach lead to significant speedup of around compared to the naive implementation, the quantiles were as follows:

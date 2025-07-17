@@ -4,8 +4,8 @@ import triton.language as tl
 @triton.jit
 def flash_bwd_kernel_dK_dV(
         Q_ptr, K_ptr, V_ptr,
-        O_ptr, dO_ptr,
-        L_ptr,
+        dO_ptr,
+        L_ptr, D_ptr,
         dK_ptr, dV_ptr,
 
         stride_qb, stride_qq, stride_qd,
@@ -70,8 +70,8 @@ def flash_bwd_kernel_dK_dV(
         order=(1, 0)
     )
 
-    O_block_ptr = tl.make_block_ptr(
-        O_ptr + batch_index * stride_ob,
+    dO_block_ptr = tl.make_block_ptr(
+        dO_ptr + batch_index * stride_ob,
         shape=(N_QUERIES, D),
         strides=(stride_oq, stride_od),
         offsets=(0, 0),
@@ -79,8 +79,8 @@ def flash_bwd_kernel_dK_dV(
         order=(1, 0)
     )
 
-    dO_block_ptr = tl.make_block_ptr(
-        dO_ptr + batch_index * stride_ob,
+    D_block_ptr = tl.make_block_ptr(
+        D_ptr + batch_index * stride_ob,
         shape=(N_QUERIES, D),
         strides=(stride_oq, stride_od),
         offsets=(0, 0),
@@ -110,11 +110,9 @@ def flash_bwd_kernel_dK_dV(
     for i in range(tl.cdiv(N_QUERIES, Q_TILE_SIZE)):
 
         Q_i = tl.load(Q_block_ptr, boundary_check= (0, 1), padding_option="zero")
-        O_i = tl.load(O_block_ptr, boundary_check= (0, 1), padding_option="zero")
         L_i = tl.load(L_block_ptr, boundary_check=(0,), padding_option="zero")
         dO_i = tl.load(dO_block_ptr, boundary_check= (0, 1), padding_option="zero")
-
-        D_i = tl.sum(dO_i * O_i, axis=-1)
+        D_i = tl.load(D_block_ptr, boundary_check= (0, 1), padding_option="zero")
 
         S_i = tl.dot( Q_i, tl.trans(K_j)) * scale
 
@@ -133,10 +131,9 @@ def flash_bwd_kernel_dK_dV(
         dK_j += tl.dot(tl.trans(dS_i), Q_i)
 
         Q_block_ptr = tl.advance(Q_block_ptr, (Q_TILE_SIZE, 0))
-        O_block_ptr = tl.advance(O_block_ptr, (Q_TILE_SIZE, 0))
         L_block_ptr = tl.advance(L_block_ptr, (Q_TILE_SIZE,))
-
         dO_block_ptr = tl.advance(dO_block_ptr, (Q_TILE_SIZE, 0))
+        D_block_ptr = tl.advance(D_block_ptr, (Q_TILE_SIZE, 0))
 
     tl.store(dK_block_ptr, dK_j, boundary_check=(0, 1))
     tl.store(dV_block_ptr, dV_j, boundary_check=(0, 1))
@@ -144,8 +141,8 @@ def flash_bwd_kernel_dK_dV(
 @triton.jit
 def flash_bwd_kernel_dQ(
         Q_ptr, K_ptr, V_ptr,
-        O_ptr, dO_ptr,
-        L_ptr,
+        dO_ptr,
+        L_ptr,D_ptr,
         dQ_ptr,
 
         stride_qb, stride_qq, stride_qd,
@@ -201,16 +198,6 @@ def flash_bwd_kernel_dQ(
         order=(1, 0)
     )
 
-
-    O_block_ptr = tl.make_block_ptr(
-        O_ptr + batch_index * stride_ob,
-        shape=(N_QUERIES, D),
-        strides=(stride_oq, stride_od),
-        offsets=(seq_len_index * Q_TILE_SIZE, 0),
-        block_shape=(Q_TILE_SIZE, D),
-        order=(1, 0)
-    )
-
     dO_block_ptr = tl.make_block_ptr(
         dO_ptr + batch_index * stride_ob,
         shape=(N_QUERIES, D),
@@ -229,11 +216,19 @@ def flash_bwd_kernel_dQ(
         order=(0,)
     )
 
+    D_block_ptr = tl.make_block_ptr(
+        D_ptr + batch_index * stride_ob,
+        shape=(N_QUERIES, D),
+        strides=(stride_oq, stride_od),
+        offsets=(seq_len_index * Q_TILE_SIZE, 0),
+        block_shape=(Q_TILE_SIZE, D),
+        order=(1, 0)
+    )
+
     Q_i = tl.load(Q_block_ptr, boundary_check= (0, 1), padding_option="zero")
-    O_i = tl.load(O_block_ptr, boundary_check= (0, 1), padding_option="zero")
     L_i = tl.load(L_block_ptr, boundary_check=(0,), padding_option="zero")
     dO_i = tl.load(dO_block_ptr, boundary_check= (0, 1), padding_option="zero")
-    D_i = tl.sum(dO_i * O_i, axis=-1)
+    D_i = tl.load(D_block_ptr, boundary_check= (0, 1), padding_option="zero")
 
     dQ_i = tl.zeros((Q_TILE_SIZE, D), dtype=tl.float32)
 
