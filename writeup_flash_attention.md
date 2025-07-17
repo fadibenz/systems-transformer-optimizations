@@ -1,6 +1,6 @@
 # Flash Attention
 
-## Flash attention Forward pass
+## FlashAttention2 Forward pass:
 
 This is the pseudocode for FlashAttention:
 
@@ -86,3 +86,33 @@ This was an insignificant improvement which might be due to the T4 architecture 
 I will stick with this implementation since it's theoretically saner. 
 
 #### Using better masking:
+
+We can exploit the shape of our causal mask to optimize the performance of our kernel, this is done by:
+
++ Stop program instances early when doing causal masking, skipping all tiles that are always all zero.
++ Separate the non-masked tiles from the tile diagonals, computing the first without ever comparing indices, and the second with a single comparison.
+
+This means that we will divide the loop over k into three parts:
++ Fully unmasked: In this part, we will not apply any mask, making computations faster.
++ Diagonal tiles: Here we will apply the mask as we would normally do.
++ Fully masked: We will never compute these.
+
+This way we will only compute the mask for the diagonal tiles, brilliant. 
+
+The challenge is how to deal with this. I had several questions:
++ Should we deal with the boundaries in the kernel or the wrapper? 
+  + Many sources point to using the kernel for this since it would lead to less launch overhead and better kernel fusion.
++ Should we keep one loop and decide the boundaries inside it?
+  + First, the causal flag should be the first level branching since triton compiles code depending on this `tl.constexpr` flag, 
+    a better approach than deciding boundaries inside the full loop is to loop through the keys up to the diagonal tile, finish the loop and process 
+    the diagonal tile with the mask, the unmasked portion is naturally skipped.
+
+> This change lead to much-needed performance gains, using the same settings as before; 
+> we achieve a speedup of 2 over the naive masking version, quantiles are as follows. 
+
+
+I will move now to the backward pass implementation.
+
+## FlashAttention2 Backward pass:
+
+This is the pseudocode for the backward pass:
