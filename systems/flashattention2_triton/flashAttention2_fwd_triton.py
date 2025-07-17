@@ -34,11 +34,11 @@ def flash_fwd_kernel(
 
     K_block_ptr = tl.make_block_ptr(
         K_ptr + batch_index * stride_kb,
-        shape=(D, N_KEYS),
-        strides=(stride_kd, stride_kk),
+        shape=(N_KEYS, D),
+        strides=(stride_kk, stride_kd),
         offsets=(0, 0),
-        block_shape=(D, K_TILE_SIZE),
-        order=(0, 1)
+        block_shape=(K_TILE_SIZE, D),
+        order=(1, 0)
     )
 
     V_block_ptr = tl.make_block_ptr(
@@ -81,7 +81,7 @@ def flash_fwd_kernel(
         K = tl.load(K_block_ptr, boundary_check=(1, 0), padding_option="zero")
         V = tl.load(V_block_ptr, boundary_check=(0, 1), padding_option="zero")
 
-        S = tl.dot(Q, K) * scale
+        S = tl.dot(Q, tl.trans(K)) * scale
 
         if is_causal:
             start_idx = i * K_TILE_SIZE
@@ -98,7 +98,7 @@ def flash_fwd_kernel(
 
         O_i = correction_term[:, None] * O_i + tl.dot(P, V)
 
-        K_block_ptr = tl.advance(K_block_ptr, (0, K_TILE_SIZE))
+        K_block_ptr = tl.advance(K_block_ptr, (K_TILE_SIZE, 0))
         V_block_ptr = tl.advance(V_block_ptr, (K_TILE_SIZE, 0))
 
         _max = _max_new
