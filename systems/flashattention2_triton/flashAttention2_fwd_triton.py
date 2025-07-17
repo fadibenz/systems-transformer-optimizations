@@ -88,8 +88,7 @@ def flash_fwd_kernel(
 
     if is_causal:
         # deal with fully unmasked portions
-
-        for _ in range (tl.cdiv(seq_tile_index, K_TILE_SIZE)):
+        for _ in range (0, seq_tile_index):
 
             K = tl.load(K_block_ptr, boundary_check=(1, 0), padding_option="zero")
             V = tl.load(V_block_ptr, boundary_check=(0, 1), padding_option="zero")
