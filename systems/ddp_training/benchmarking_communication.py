@@ -74,15 +74,17 @@ if __name__ == "__main__":
 
     for config in CONFIGS_TO_RUN:
         world_size = config['world_size']
-        if config['backend'] == 'nccl' and not torch.cuda.is_available():
-            print("Must run nccl backend option in GPU environment")
+        if config['backend'] == 'nccl':
+            if not torch.cuda.is_available():
+                print("Must run nccl backend option in GPU environment")
+                continue
 
-        if config['backend'] == 'nccl' and num_gpus < world_size:
-            print(
-                f"Skipping config ({world_size} procs): "
-                f"Requires {world_size} GPUs, but only {num_gpus} are available."
-            )
-            continue
+            if num_gpus < world_size:
+                print(
+                    f"Skipping config ({world_size} procs): "
+                    f"Requires {world_size} GPUs, but only {num_gpus} are available."
+                )
+                continue
 
         if config['backend'] == 'gloo' and num_cores < world_size:
             print(
