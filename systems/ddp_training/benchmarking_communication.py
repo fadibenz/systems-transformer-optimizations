@@ -35,11 +35,9 @@ def distributed_benchmark(rank: int,
 
     if device_type == "gpu":
         torch.cuda.synchronize()
-
     dist.barrier()
 
     start_time = timeit.default_timer()
-
     for _ in range(num_iterations):
         dist.all_reduce(data, async_op=False)
 
@@ -50,6 +48,7 @@ def distributed_benchmark(rank: int,
 
     time_list = [None] * world_size
     dist.all_gather_object(time_list, end_time)
+    dist.barrier()
 
     if rank == 0:
         avg_total_time = np.mean(time_list)
@@ -66,7 +65,7 @@ def distributed_benchmark(rank: int,
 
 
 if __name__ == "__main__":
-    CONFIGS_TO_RUN = construct_config("systems/configs/distributed_benchmarking")
+    CONFIGS_TO_RUN = construct_config("systems/configs/distirbuted_benchmarking.YAML")
 
     num_gpus = torch.cuda.device_count()
     num_cores = os.cpu_count()
@@ -75,6 +74,8 @@ if __name__ == "__main__":
 
     for config in CONFIGS_TO_RUN:
         world_size = config['world_size']
+        if config['backend'] == 'nccl' and not torch.cuda.is_available():
+            print("Must run nccl backend option in GPU environment")
 
         if config['backend'] == 'nccl' and num_gpus < world_size:
             print(
@@ -94,7 +95,6 @@ if __name__ == "__main__":
               f"Processes={world_size}, Size={config['tensor_size_bytes'] / MB:.0f}MB")
 
         free_port = find_free_port()
-
         mp.spawn(
             fn=distributed_benchmark,
             args=(
