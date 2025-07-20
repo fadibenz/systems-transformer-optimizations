@@ -4,6 +4,9 @@ import socket
 from systems.utils import load_config
 from itertools import product
 
+MB = 1024 * 1024
+GB = 1024 * MB
+
 def setup(rank, world_size, backend, port):
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = str(port)
@@ -32,4 +35,5 @@ def construct_config(file_path):
                 'world_size': world_size,
                 'tensor_size_bytes': tensor_size_mb * MB
             })
+    return CONFIGS_TO_RUN
 
