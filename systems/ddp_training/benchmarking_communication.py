@@ -5,7 +5,7 @@ import torch
 import torch.multiprocessing as mp
 import torch.distributed as dist
 import numpy as np
-from systems.ddp_training.utils import find_free_port, setup, construct_config
+from systems.ddp_training.utils import  setup, construct_config
 
 MB = 1024 * 1024
 GB = 1024 * MB
@@ -16,10 +16,9 @@ def distributed_benchmark(rank: int,
                           backend: str,
                           device_type: str,
                           tensor_size_bytes: int,
-                          port: int,
                           num_iterations: int = 20,
                           warmup_iterations: int = 5):
-    setup(rank, world_size, backend, port)
+    setup(rank, world_size, backend)
 
     if device_type == "gpu":
         device = torch.device(f"cuda:{rank}")
@@ -102,7 +101,6 @@ if __name__ == "__main__":
         print(f"Config: Backend={config['backend']}, "
               f"Processes={world_size}, Size={config['tensor_size_bytes'] / MB:.0f}MB")
 
-        free_port = find_free_port()
         mp.spawn(
             fn=distributed_benchmark,
             args=(
@@ -110,7 +108,6 @@ if __name__ == "__main__":
                 config['backend'],
                 config['device'],
                 config['tensor_size_bytes'],
-                free_port
             ),
             nprocs=world_size,
             join=True
