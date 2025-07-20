@@ -1,0 +1,9 @@
+benchmarks:
+  - backend: gloo
+    device: cpu
+    world_sizes: [2, 4, 6]
+    tensor_sizes_mb: [1, 10, 100, 1024]
+  - backend: nccl
+    device: gpu
+    world_sizes: [2, 4, 6]
+    tensor_sizes_mb: [10, 100, 1024]
