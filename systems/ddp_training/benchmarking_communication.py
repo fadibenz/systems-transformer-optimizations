@@ -46,11 +46,17 @@ def distributed_benchmark(rank: int,
 
     end_time = timeit.default_timer() - start_time
 
-    time_list = [None] * world_size
-    dist.all_gather_object(time_list, end_time)
-    dist.barrier()
+    local_time_tensor = torch.tensor([end_time], dtype=torch.float32)
 
     if rank == 0:
+        gathered_times = [torch.zeros(1, dtype=torch.float32, device="cpu") for _ in range(world_size)]
+    else:
+        gathered_times = None
+
+    dist.gather(tensor=local_time_tensor, gather_list=gathered_times, dst=0)
+
+    if rank == 0:
+        time_list = [t.item() for t in gathered_times]
         avg_total_time = np.mean(time_list)
         avg_time_s = avg_total_time / num_iterations
 
