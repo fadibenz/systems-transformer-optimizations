@@ -45,10 +45,10 @@ def distributed_benchmark(rank: int,
 
     end_time = timeit.default_timer() - start_time
 
-    local_time_tensor = torch.tensor([end_time], dtype=torch.float32)
+    local_time_tensor = torch.tensor([end_time], dtype=torch.float32, device=device)
 
     if rank == 0:
-        gathered_times = [torch.zeros(1, dtype=torch.float32, device="cpu") for _ in range(world_size)]
+        gathered_times = [torch.zeros(1, dtype=torch.float32, device=device) for _ in range(world_size)]
     else:
         gathered_times = None
 
