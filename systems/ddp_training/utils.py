@@ -7,10 +7,9 @@ from itertools import product
 MB = 1024 * 1024
 GB = 1024 * MB
 
-def setup(rank, world_size, backend, port):
+def setup(rank, world_size, backend):
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = str(port)
-
+    os.environ['MASTER_PORT'] = "29500"
     dist.init_process_group(
         backend=backend,
         rank=rank,
