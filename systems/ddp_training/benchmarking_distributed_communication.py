@@ -59,7 +59,7 @@ if __name__ == "__main__":
         if backend == "nccl" and not torch.cuda.is_available():
             print("Must have GPU to run nccl backend option")
             continue
-        print(f"  Backend + device type: {backend} + {"GPU" if backend=="nccl" else "CPU"}")
+        print(f"  Backend + device type: {backend} + {'GPU' if backend=='nccl' else 'CPU'}")
 
         for data_size in data_size_list:
             print(f"      all-reduce data size: ~{data_size * 4 / 1048576:.1f} MB")
@@ -68,10 +68,7 @@ if __name__ == "__main__":
                 try:
                     print(f"          Number of processes: {world_size}")
                     mp.spawn(fn=distributed_benchmark, args=(world_size, backend, data_size), nprocs=world_size, join=True)
-                except (RuntimeError, ValueError) as e:
-                    if "nprocs" in str(e).lower() or "processes" in str(e).lower():
-                        print(f"Not enough processes for world_size={world_size}, Skipping...")
-                        print(f"Error: {e}")
-                    else:
-                        raise
+                except Exception as e:
+                    print(f"Error: {e}")
+
     print("\nFinished benchmarking")
