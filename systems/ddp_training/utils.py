@@ -63,7 +63,7 @@ def print_logs(end_time_e2e, end_time_reduce, device, rank, num_iterations, worl
 
         print(
             f"  -> Avg Time for full training step: {avg_time_e2e_s * 1000:.4f} ms | "
-            f"Avg for reduce operation: {avg_time_reduce_s * 1000:.4f} ms ({(avg_time_reduce_s / avg_time_e2e_s) * 100}%)"
+            f"Avg for reduce operation: {avg_time_reduce_s * 1000:.4f} ms ({(avg_time_reduce_s / avg_time_e2e_s) * 100:.1f}%)"
         )
 
 def forward_backward_step(model, data, targets, optimizer):

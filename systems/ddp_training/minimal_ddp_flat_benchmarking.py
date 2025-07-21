@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     x, y = get_batch(random_id_tokens, config["batch_size"], args.context_length, device="cpu")
 
-    print("\n Started benchmarking naive DDP")
+    print("\n Started benchmarking DDP with flat tensors")
     print(60 * "-")
     mp.spawn(
         fn=train_model,
@@ -123,4 +123,4 @@ if __name__ == "__main__":
         join=True
     )
     print(60 * "-")
-    print("\n Finished benchmarking naive DDP")
+    print("\n Finished benchmarking  DDP with flat tensors")
