@@ -47,9 +47,12 @@ def train_model(rank: int,
     dist.broadcast(flattened_param_data, src=0)
     unflattened_param_data = _unflatten_dense_tensors(flattened_param_data, param_data)
 
+    del flattened_param_data
+
     for original_data, new_data in zip(param_data, unflattened_param_data):
         original_data.copy_(new_data)
 
+    del unflattened_param_data
     optimizer = AdamW(model.parameters())
 
     for _ in range(args.warmup_iters):
@@ -59,10 +62,10 @@ def train_model(rank: int,
         flattened_tensor = _flatten_dense_tensors(grads)
         dist.all_reduce(flattened_tensor, op=dist.ReduceOp.AVG)
         unflattened_tensors = _unflatten_dense_tensors(flattened_tensor, grads)
-
+        del flattened_tensor
         for original_grad, average_grad in zip(grads, unflattened_tensors):
             original_grad.copy_(average_grad)
-
+        del unflattened_tensors
         optimizer.step()
 
     torch.cuda.synchronize()
@@ -75,14 +78,15 @@ def train_model(rank: int,
         start_time_reduce = timeit.default_timer()
         grads = [param.grad for param in model.parameters() if param.grad is not None]
         flattened_tensor = _flatten_dense_tensors(grads)
+
         dist.all_reduce(flattened_tensor, op=dist.ReduceOp.AVG)
         unflattened_tensors = _unflatten_dense_tensors(flattened_tensor, grads)
-
+        del flattened_param_data
         for original_grad, average_grad in zip(grads, unflattened_tensors):
             original_grad.copy_(average_grad)
-
         torch.cuda.synchronize()
         end_time_reduce += timeit.default_timer() - start_time_reduce
+        del unflattened_param_data
 
         optimizer.step()
 
