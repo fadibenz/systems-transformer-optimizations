@@ -21,13 +21,20 @@ class DDPOverlap(torch.nn.Module):
         for original_param, broadcast_param in zip(params, broadcast_params):
             original_param.copy_(broadcast_param)
 
-        self.hooks = []
+        self.pending_ops = []
+
+        def create_hook(param):
+            def hook_fn(p):
+                h = dist.all_reduce(p.grad,
+                                    op=dist.ReduceOp.AVG,
+                                    async_op=True)
+                self.pending_ops.append(h)
+            return hook_fn
+
         for param in model.parameters():
             if param.requires_grad:
-                h = param.register_post_accumulate_grad_hook(lambda p: dist.all_reduce(p.grad,
-                                                                               op=dist.ReduceOp.AVG,
-                                                                               async_op=True))
-                self.hooks.append(h)
+                param.register_post_accumulate_grad_hook(create_hook(param))
+
         self.wrapped_model = model
 
 
@@ -35,6 +42,12 @@ class DDPOverlap(torch.nn.Module):
         return self.wrapped_model(*inputs, **kwargs)
 
     def finish_gradient_synchronization(self):
-        for h in self.hooks:
+        for h in self.pending_ops:
             h.wait()
-        self.hooks.clear()
+        self.pending_ops.clear()
+
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.wrapped_model, name)
