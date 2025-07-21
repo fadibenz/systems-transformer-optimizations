@@ -81,7 +81,7 @@ def train_model(rank: int,
 
         dist.all_reduce(flattened_tensor, op=dist.ReduceOp.AVG)
         unflattened_tensors = _unflatten_dense_tensors(flattened_tensor, grads)
-        del flattened_param_data
+        del flattened_tensor
         for original_grad, average_grad in zip(grads, unflattened_tensors):
             original_grad.copy_(average_grad)
         torch.cuda.synchronize()
