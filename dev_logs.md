@@ -51,10 +51,16 @@
 
 # 2025-07-17
 + Implemented all the previously discussed optimization tricks:
-  + Replaced the backward pass with two passes one for dQ and another for dK and dV to avoid atomics or synchronization between blocks.
+  + Replaced the backward pass with two passes, one for dQ and another for dK and dV to avoid atomics or synchronization between blocks.
   + Implemented smart causal masking:
-    + replace the backward pass with two passes one for dQ and another for dK and dV to avoid atomics or synchronization between blocks.
+    + replace the backward pass with two passes, one for dQ and another for dK and dV to avoid atomics or synchronization between blocks.
       - Stop program instances early when doing causal masking, skipping all tiles that are always all zero
       - Separated the non-masked tiles from the tile diagonals, computing the first without ever comparing indices, and the second with a single comparison
 + Finished forward and backward sections in the writeup. 
 + Benchmarked extensively each new optimization trick I added and compared all of them in the writeup.
+
+# 2025-07-20
++ Started learning about distributed training (DP, FSDP, TP, PP, EP), I will focus on DP.
++ Implemented a benchmarking script to investigate the overhead of distributed communication operations. 
++ Finished writeup on different benchmarking settings with tables and plots.
+
