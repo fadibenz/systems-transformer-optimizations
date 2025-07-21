@@ -422,7 +422,7 @@ def scaled_dot_product_attention(
     """
 
 
-    return FlashAttention2Triton.apply(Q, K, V, is_causal=True)
+    return FlashAttention2Triton.apply(Q, K, V, True)
 
 
 class CausalMultiHeadSelfAttention(nn.Module):
