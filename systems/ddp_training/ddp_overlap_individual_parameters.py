@@ -8,7 +8,14 @@ class DDPOverlap(torch.nn.Module):
                  module: torch.nn.Module):
         super().__init__()
 
-        params = [param.data for param in module.parameters()]
+        self.pending_ops = []
+        self.module = module
+
+        self._broadcast()
+        self._setup_hook()
+
+    def _broadcast(self):
+        params = [param.data for param in self.module.parameters()]
 
         flattened_params = _flatten_dense_tensors(params)
         dist.broadcast(
@@ -21,21 +28,18 @@ class DDPOverlap(torch.nn.Module):
         for original_param, broadcast_param in zip(params, broadcast_params):
             original_param.copy_(broadcast_param)
 
-        self.pending_ops = []
-
-        def create_hook(param):
-            def hook_fn(p):
-                h = dist.all_reduce(p.grad,
-                                    op=dist.ReduceOp.AVG,
-                                    async_op=True)
-                self.pending_ops.append(h)
-            return hook_fn
-
-        for param in module.parameters():
+    def _setup_hook(self):
+        for param in self.module.parameters():
             if param.requires_grad:
-                param.register_post_accumulate_grad_hook(create_hook(param))
-        self.module = module
+                param.register_post_accumulate_grad_hook(self._create_hook)
 
+    def _create_hook(self):
+        def hook_fn(p):
+            h = dist.all_reduce(p.grad,
+                                op=dist.ReduceOp.AVG,
+                                async_op=True)
+            self.pending_ops.append(h)
+        return hook_fn
 
     def forward(self, *inputs, **kwargs):
         return self.module(*inputs, **kwargs)
