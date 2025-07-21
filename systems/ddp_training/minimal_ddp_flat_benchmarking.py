@@ -86,7 +86,7 @@ def train_model(rank: int,
             original_grad.copy_(average_grad)
         torch.cuda.synchronize()
         end_time_reduce += timeit.default_timer() - start_time_reduce
-        del unflattened_param_data
+        del unflattened_tensors
 
         optimizer.step()
 
