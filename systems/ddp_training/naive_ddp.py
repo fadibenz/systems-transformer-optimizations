@@ -14,11 +14,10 @@ from transformer_implementation.optimizer import AdamW
 def train_model(rank:int,
                 world_size:int,
                 config: dict,
-                model_name: str,
+                args,
                 x: torch.Tensor,
                 y: torch.Tensor,
-                warmup_iterations,
-                num_iterations):
+                ):
 
     setup(rank, world_size, "nccl")
 
@@ -29,14 +28,14 @@ def train_model(rank:int,
     data, targets = prepare_local_data(x, y, rank, device, world_size)
 
     # Model
-    model_config = config[model_name]
+    model_config = config[args.model_name]
     model = BasicsTransformerLM(
         d_model=model_config["d_model"],
         num_layers=model_config["num_layers"],
         num_heads=model_config["num_heads"],
         d_ff=model_config["d_ff"],
 
-        context_length=config["context_length"],
+        context_length=args.context_length,
         vocab_size=config["vocab_size"],
         rope_theta=config["rope_theta"]
     )
@@ -47,7 +46,7 @@ def train_model(rank:int,
 
     optimizer = AdamW(model.parameters())
 
-    for _ in range(warmup_iterations):
+    for _ in range(args.warmup_iters):
         forward_backward_step(model, data, targets, optimizer)
         for param in model.parameters():
             if param.grad is not None:
@@ -59,7 +58,7 @@ def train_model(rank:int,
     end_time_reduce = 0
     start_time_e2e = timeit.default_timer()
 
-    for _ in range(num_iterations):
+    for _ in range(args.iters):
         forward_backward_step(model, data, targets, optimizer)
 
         start_time_reduce = timeit.default_timer()
@@ -75,7 +74,7 @@ def train_model(rank:int,
     torch.cuda.synchronize()
     end_time_e2e = timeit.default_timer() - start_time_e2e
 
-    print_logs(end_time_e2e, end_time_reduce, device, rank, num_iterations, world_size)
+    print_logs(end_time_e2e, end_time_reduce, device, rank, args.iters, world_size)
 
     dist.destroy_process_group()
 
@@ -102,10 +101,8 @@ if __name__ == "__main__":
         fn=train_model,
         args=(world_size,
               config,
-              args.model,
-              x, y,
-              args.warmup_iters,
-              args.iters),
+              args,
+              x, y),
         nprocs=world_size,
         join=True
     )
