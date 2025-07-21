@@ -22,6 +22,10 @@ def get_args():
         '--context_length',
         type=int,
         default=512)
+    parser.add_argument(
+        '--batch_size',
+        type=int,
+        default=32)
 
     # Profiling
     parser.add_argument('--iters', type=int, default=10)

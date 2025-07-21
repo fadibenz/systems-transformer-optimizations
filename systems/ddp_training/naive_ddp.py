@@ -91,9 +91,9 @@ if __name__ == "__main__":
 
     config = load_config("systems/configs/model_sizing.YAML")
 
-    random_id_tokens = np.random.randint(0, config["vocab_size"], config["batch_size"] * args.context_length)
+    random_id_tokens = np.random.randint(0, config["vocab_size"], args.batch_size * args.context_length)
 
-    x, y = get_batch(random_id_tokens, config["batch_size"], args.context_length, device="cpu")
+    x, y = get_batch(random_id_tokens, args.batch_size, args.context_length, device="cpu")
 
     print("\n Started benchmarking naive DDP")
     print(60 * "-")
