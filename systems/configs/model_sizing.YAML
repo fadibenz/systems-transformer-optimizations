@@ -25,5 +25,5 @@ xl:
   num_heads: 32
 
 vocab_size: 10000
-batch_size: 2
+batch_size: 32
 rope_theta: 100000
