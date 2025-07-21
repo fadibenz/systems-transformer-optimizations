@@ -28,7 +28,7 @@ def train_model(rank: int,
     # Data
     data, targets = prepare_local_data(x, y, rank, device, world_size)
     # Model
-    model_config = args.model
+    model_config = config[args.model]
     model = BasicsTransformerLM(
         d_model=model_config["d_model"],
         num_layers=model_config["num_layers"],
