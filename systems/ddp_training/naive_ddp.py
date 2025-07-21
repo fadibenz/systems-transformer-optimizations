@@ -117,7 +117,7 @@ def train_model(rank:int,
     dist.destroy_process_group()
 
 
-if __name__ == "__main":
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Model
