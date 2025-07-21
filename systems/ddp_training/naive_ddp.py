@@ -7,9 +7,9 @@ from systems.ddp_training.utils import setup
 from systems.utils import load_config, set_seed_everything
 import sys
 import timeit
-from transformer_implementation.transformer_implementation.data import get_batch
-from transformer_implementation.transformer_implementation.model import BasicsTransformerLM
-from transformer_implementation.transformer_implementation.optimizer import AdamW
+from transformer_implementation.data import get_batch
+from transformer_implementation.model import BasicsTransformerLM
+from transformer_implementation.optimizer import AdamW
 import argparse
 
 def train_model(rank:int,
