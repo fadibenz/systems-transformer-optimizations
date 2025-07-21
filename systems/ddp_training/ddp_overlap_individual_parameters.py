@@ -5,10 +5,10 @@ from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
 
 class DDPOverlap(torch.nn.Module):
     def __init__(self,
-                 model: torch.nn.Module):
+                 module: torch.nn.Module):
         super().__init__()
 
-        params = [param.data for param in model.parameters()]
+        params = [param.data for param in module.parameters()]
 
         flattened_params = _flatten_dense_tensors(params)
         dist.broadcast(
@@ -31,23 +31,16 @@ class DDPOverlap(torch.nn.Module):
                 self.pending_ops.append(h)
             return hook_fn
 
-        for param in model.parameters():
+        for param in module.parameters():
             if param.requires_grad:
                 param.register_post_accumulate_grad_hook(create_hook(param))
-
-        self.wrapped_model = model
+        self.module = module
 
 
     def forward(self, *inputs, **kwargs):
-        return self.wrapped_model(*inputs, **kwargs)
+        return self.module(*inputs, **kwargs)
 
     def finish_gradient_synchronization(self):
         for h in self.pending_ops:
             h.wait()
         self.pending_ops.clear()
-
-    def __getattr__(self, name):
-        try:
-            return super().__getattr__(name)
-        except AttributeError:
-            return getattr(self.wrapped_model, name)
