@@ -4,7 +4,7 @@ from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
 
 MB = 1024 * 1024
 
-class DDPOverlap(torch.nn.Module):
+class DDPBucketed(torch.nn.Module):
     def __init__(self,
                  module: torch.nn.Module,
                  bucket_size_mb: float):
@@ -13,9 +13,7 @@ class DDPOverlap(torch.nn.Module):
         self.pending_ops = []
         self.module = module
         self.bucket_size_mb = bucket_size_mb
-
         self._broadcast()
-
         self._setup_hooks()
 
     def _broadcast(self):
