@@ -127,11 +127,27 @@ These are the results of the full training pass, with the same parameters as bef
 | Large      | 0.517       | 0.388            |
 
 > **Notes:**
-> + As expected, mixed-precision training leads to better performance; although even 
-> with mixed-precision, it's still suboptimal compared to P100 with Full precision.
+> + As expected, mixed-precision training leads to better performance; although even with mixed-precision, it's still suboptimal compared to P100 with Full precision.
 > This might be because certain operations still execute in FP32 (Where P100 has higher peak throughput).
-> + Another caveat is that mixed-precision used more memory, probably because we still store a master copy of the weights.
-> + The difference in performance becomes bigger as model size gets bigger (better hardware utilization)
+
+###### Memory usage:
+
+A caveat is that mixed-precision used more memory, mixed precision training itself doesn’t save memory; it just distributes the memory differently.
+
+This is the memory usage our model will have with mixed precision:
+
+$`m\_{params}` = 2 * N$
+$`m\_{grad}` = 2 * N$
+$`m\_{params_fp32}` = 4 * N$
+$`m\_{opt}` = 8 * N$
+
+And this can even add another 4 bytes over full precision training if we accumulate gradients in FP32 (Hence why I encountered OOM).
+
+But It’s still advantageous (in modern hardware), though, as computing the forward/backward passes in half precision  
+(1) allows us to use optimized lower precision operations on the GPU, which are faster, and (2) reduces the activation memory requirements during the forward pass, which are a large part of the memory usage.
+
+
+
 
 ### Nsight Systems Profiler:
 
