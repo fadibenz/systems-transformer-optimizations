@@ -70,3 +70,10 @@
 + Implemented DDP with overlapped parameters communication.
 + Implemented DDP with overlapped and bucketed communication.
 + All implementations pass the tests.
+
+# 2025-07-22
++ Added benchmarking for overlapped parameters communication.
++ Added benchmarking and profiling for overlapped and bucketed communication. 
++ Added writeup section on all the previous techniques with tables, plots, and comparisons.
++ Read the Ultra-scaling book sections on DP, and ZeRO (1, 2, 3).
++ Added writeup section on communication accounting.
