@@ -64,3 +64,9 @@
 + Implemented a benchmarking script to investigate the overhead of distributed communication operations. 
 + Finished writeup on different benchmarking settings with tables and plots.
 
+# 2025-07-21
++ Implemented the naive version of DDP and the benchmarking script.
++ Implemented DDP with flattened gradients communication and benchmarking scripts.
++ Implemented DDP with overlapped parameters communication.
++ Implemented DDP with overlapped and bucketed communication.
++ All implementations pass the tests.
