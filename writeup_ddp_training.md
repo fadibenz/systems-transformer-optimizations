@@ -60,4 +60,109 @@ both grouped by Backend and Processes, with Size as the x-axis.
 
 Caveats and engineering details:
 + I couldn't use TCP to initialize processes on my machine (Windows), I used a local file instead for local testing, I switched to TCP for actual benchmarking in Kaggle.
-+ `dist.all_gather_object` causes deadlocks, I still don't know why, but I used `dist.gather` instead (I wasted a lot of time trying to make it to work)
++ `dist.all_gather_object` causes deadlocks, I still don't know why, but I used `dist.gather` instead (I wasted a lot of time trying to make it work)
+
+
+## Data Parallel Training:
+
+This is one of the four methods of parallelism (DP, FSDP/TP, PP, EP), and arguably the simplest one.
+It allows for bigger batch sizes, something important for stable transformer training. 
+
+> Premise: Batches of data are split across multiple devices, and each device computes gradients for their own batch. 
+> These gradients are then averaged across devices.
+
+### Naive DDP:
+For naïvely doing distributed data parallel training, we communicate gradients to average after we finish calculating 
+the full backward pass, and we communicate gradients one parameter at a time.
+
+You can find implementation under `systems/ddp_training/naive_ddp`.
+
+To benchmark this solution,
+I used the medium model size configuration (biggest I could fit) from `systems/configs/model_sizing.YAML`
+with batch size 32 and context length 64, I ran experiments on Kaggle using 2 * T4 GPUS.
+
+Results for benchmarking this implementation were as follows:
+
+```
+Started benchmarking naive DDP
+------------------------------------------------------------
+  -> Avg Time for full training step: 1406.7442 ms | Avg for reduce operation: 498.0934 ms (35.4%)
+------------------------------------------------------------
+ Finished benchmarking naive DDP
+```
+
+We can notice two things a large amount of time is spent in communication, which adds significant overhead;
+this overhead would be even larger for bigger models (more gradients to communicate).
+
+There are two solutions to improve this naive approach:
++ Reduce the number of communication calls by flattening gradients from all parameters and doing one reduce operation.
++ Overlap communication of parameters with backward pass computations (all-reduce parameter gradients as soon as they’re ready)
+
+We will implement each optimization strategy at a time and see what it yields.
+
+## DDP with flattened tensors:
+
+This is a straightforward implementation, `systems/ddp_training/minimal_ddp_flat_benchmarking`. 
+
+The results for benchmarking using the same setup as before were as follows:
+
+```
+ Started benchmarking DDP with flat tensors
+------------------------------------------------------------
+  -> Avg Time for full training step: 1365.1573 ms | Avg for reduce operation: 500.2333 ms (36.6%)
+------------------------------------------------------------
+
+ Finished benchmarking  DDP with flat tensors
+```
+
+These results were surprising as I expected to see improvement.
+
+> However, this might be because our model size is small
+> and the overhead from flattening/unflattening and then copying back parameters is greater than  
+> the overhead associated with issuing a large number of small all-reduce operations.
+> I expect to see a slight edge for the version with flat tensors in large models. 
+
+## DDP with overlap: 
+
+We will communicate gradients as soon as they’re computed by the backward pass,
+this way we can overlap computation with communication.
+
+Implementation is in `systems/ddp_training/ddp_overlap_individual_parameters`. 
+It contains a wrapper that asynchronously all-reduces individual parameter tensors. 
+
+We use two concepts Backward hooks and Asynchronous communication.
+
+The results for benchmarking using the same setup as before were as follows:
+
+```
+ Started benchmarking DDP with overlap and individual parameter communication
+------------------------------------------------------------
+  -> Avg Time for full training step: 1075.7339 ms | 
+------------------------------------------------------------
+
+ Finished benchmarking  DDP with overlap and individual parameter communication
+ ```
+
+Great, we can see an improvement; our training step now is 28% faster!
+
+
+## DDP with bucketed overlap:
+
+To get the best of two worlds, we will implement overlap with bucketed communication.
+We will organize our parameters into buckets (reducing the number of total communication calls)
+and all-reducing buckets when each of their constituent tensors is ready
+(enabling us to overlap communication with computation).
+
+Implementation is in `systems/ddp_training/ddp_overlap_bucketed`.
+
+We will benchmark using the same experimental setup as before varying 
+the maximum bucket size (1, 10, 100, 1000 MB).
+
+
+Results were as follows: 
+
+
+Engineering details: 
++ This was a very fun class to implement, I used some cool concepts like closures and nonlocal variables.
++ In my current implementation, there's an overhead of allocating/deallocating tensors for flattening and unflattening;
+a better option would be to allocate persistent buffers for each bucket.
