@@ -61,7 +61,7 @@ class DDPBucketed(torch.nn.Module):
         current_bucket = []
         current_bucket_size = 0
 
-        for param in reversed(params):
+        for param in params:
             current_bucket.append(param)
             current_bucket_size += param.data.numel() * param.data.element_size()
 
