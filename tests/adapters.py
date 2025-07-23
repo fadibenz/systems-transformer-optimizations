@@ -6,6 +6,8 @@ from systems.ddp_training.ddp_overlap_bucketed import DDPBucketed
 from systems.ddp_training.ddp_overlap_individual_parameters import DDPOverlap
 from systems.flashattention2_triton.flashAttention2_pytorch import FlashAttention2
 from systems.flashattention2_triton.flashAttention2_triton_wrapper import FlashAttention2Triton
+from systems.optimizer_sharding.optimizer_state_sharding import OptimizerStateSharding
+
 
 def get_flashattention_autograd_function_pytorch() -> Type:
     """
@@ -135,4 +137,4 @@ def get_sharded_optimizer(params, optimizer_cls: Type[torch.optim.Optimizer], **
     Returns:
         Instance of sharded optimizer.
     """
-    raise NotImplementedError
+    return OptimizerStateSharding(params, optimizer_cls, **kwargs)
