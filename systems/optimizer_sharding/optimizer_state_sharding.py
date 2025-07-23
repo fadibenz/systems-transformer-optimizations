@@ -18,7 +18,7 @@ class OptimizerStateSharding(torch.optim.Optimizer):
         self.optimizer_cls = optimizer_cls
         self.local_optimizer = None
         self.optimizer_kwargs = kwargs
-        super().__init__(params, **kwargs)
+        super().__init__(params, kwargs)
 
     def step(self,
              closure: Optional[Callable[[], float]] = None,
