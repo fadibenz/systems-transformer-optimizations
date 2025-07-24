@@ -77,3 +77,10 @@
 + Added writeup section on all the previous techniques with tables, plots, and comparisons.
 + Read the Ultra-scaling book sections on DP, and ZeRO (1, 2, 3).
 + Added writeup section on communication accounting.
+
+### 2025-07-23
+- Completed and tested the from-scratch implementation of optimizer state sharding.
+- Benchmarked its performance, measuring the trade-off between memory savings and increased communication overhead.
+
+### 2025-07-24
+- Finalized analysis and documentation for all implemented systems optimizations.
