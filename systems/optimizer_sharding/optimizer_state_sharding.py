@@ -36,13 +36,36 @@ class OptimizerStateSharding(torch.optim.Optimizer):
             params = group["params"]
             params_data = [p.data for p in params]
             nb_params = len(params_data)
+            start_idx, end_idx = self._get_shard_range(nb_params, self.rank)
+            local_shard = params_data[start_idx:end_idx]
 
-            for rank in range(self.world_size):
+            if not local_shard:
+                flat_local_shard = torch.empty(0, dtype=params_data[0].dtype, device=params_data[0].device)
+            else:
+                flat_local_shard = _flatten_dense_tensors(local_shard)
+
+
+            size = torch.tensor([flat_local_shard.numel()], dtype=torch.long, device=flat_local_shard.device)
+            size_list = [torch.zeros(1, dtype=torch.long, device=flat_local_shard.device ) for _ in range(self.world_size)]
+            dist.all_gather(size_list, size)
+
+            size_list = [s.item() for s in size_list]
+            max_size = max(size_list)
+
+            padded_local_shard = torch.zeros(max_size, device=flat_local_shard.device, dtype=flat_local_shard.dtype)
+            padded_local_shard[:size.item()] = flat_local_shard
+
+            gathered_tensors = [torch.zeros_like(padded_local_shard) for _ in range(self.world_size)]
+            dist.all_gather(gathered_tensors, padded_local_shard)
+
+            for rank, shard_size  in zip(range(self.world_size), size_list):
                 start_idx, end_idx = self._get_shard_range(nb_params, rank)
                 shard = params_data[start_idx:end_idx]
-                flat = _flatten_dense_tensors(shard)
-                dist.broadcast(flat, src=rank)
-                unflat = _unflatten_dense_tensors(flat, shard)
+                if not shard:
+                    continue
+
+                padded_shard_data = gathered_tensors[rank][:int(shard_size)]
+                unflat = _unflatten_dense_tensors(padded_shard_data, shard)
 
                 for param, data in zip(shard, unflat):
                     param.copy_(data)
